@@ -5,14 +5,19 @@ module Data.JSON
 export
 data JsonValue : Type where
   JsonNull : JsonValue
+  JsonBool : Bool -> JsonValue
 
 mutual
   parseValue' : List Char -> Either String (JsonValue, List Char)
-  parseValue' ('n' :: 'u' :: 'l' :: 'l' :: cs)  = Right (JsonNull, cs)
+  parseValue' ('n' :: 'u' :: 'l' :: 'l' :: cs)        = Right (JsonNull, cs)
+  parseValue' ('t' :: 'r' :: 'u' :: 'e' :: cs)        = Right (JsonBool True, cs)
+  parseValue' ('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = Right (JsonBool False, cs)
   parseValue' _ = ?parseValue_rhs
 
   showValue' : (v : JsonValue) -> Subset (List Char) (\s => parseValue' s = Right (v, []))
-  showValue' JsonNull = Element ['n', 'u', 'l', 'l'] Refl
+  showValue' (JsonNull)       = Element ['n', 'u', 'l', 'l'] Refl
+  showValue' (JsonBool True)  = Element ['t', 'r', 'u', 'e'] Refl
+  showValue' (JsonBool False) = Element ['f', 'a', 'l', 's', 'e'] Refl
 
 
 Show JsonValue where
