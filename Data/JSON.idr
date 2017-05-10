@@ -20,20 +20,29 @@ dropsAll : (cs : List a) -> Tail cs []
 dropsAll [] = TailHere
 dropsAll (x :: xs) = TailThere (dropsAll xs)
 
+data ParseResult : Type -> Type where
+  ParseFail : String -> ParseResult a
+  ParseOk   : {a : Type} ->
+              (value : a) ->
+              (inp  : List Char) ->
+              (outp : List Char) ->
+              Tail inp outp ->
+              ParseResult a
+
 Parser : Type -> Type
-Parser a = (inp : List Char) -> Either String (a, (outp : List Char ** Tail inp outp))
+Parser a = (inp : List Char) -> ParseResult a
 
 parseValue : Parser JsonValue
-parseValue []                                          = Left "unexpected end of input"
-parseValue inp@('n' :: 'u' :: 'l' :: 'l' :: cs)        = Right (JsonNull, (cs ** drops 4 inp))
-parseValue inp@('t' :: 'r' :: 'u' :: 'e' :: cs)        = Right (JsonBool True, (cs ** drops 4 inp))
-parseValue inp@('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = Right (JsonBool False, (cs ** drops 5 inp))
-parseValue (c :: _)                                    = Left $ "unexpected " ++ show c
+parseValue []                                          = ParseFail "unexpected end of input"
+parseValue inp@('n' :: 'u' :: 'l' :: 'l' :: cs)        = ParseOk JsonNull inp cs (drops 4 inp)
+parseValue inp@('t' :: 'r' :: 'u' :: 'e' :: cs)        = ParseOk (JsonBool True) inp cs (drops 4 inp)
+parseValue inp@('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = ParseOk (JsonBool False) inp cs (drops 5 inp)
+parseValue (c :: _)                                    = ParseFail $ "unexpected " ++ show c
 
 data ParsesAs : JsonValue -> List Char -> Type where
   MkParsesAs : (v : JsonValue) ->
                (cs : List Char) ->
-               parseValue cs = Right (v, ([] ** dropsAll cs)) ->
+               parseValue cs = ParseOk v cs [] (dropsAll cs) ->
                ParsesAs v cs
 
 showValue : (v : JsonValue) -> Subset (List Char) (ParsesAs v)
@@ -46,7 +55,8 @@ Show JsonValue where
 
 export
 parse : String -> Either String JsonValue
-parse s = case parseValue (unpack s) of
-            Left err             => Left err
-            Right (v, ([] ** _)) => Right v
-            _                    => Left "extra data at end of input"
+parse s = let cs = unpack s in
+          case parseValue cs of
+            ParseFail err     => Left err
+            ParseOk v cs [] _ => Right v
+            _                 => Left "extra data at end of input"
