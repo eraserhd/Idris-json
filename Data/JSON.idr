@@ -11,10 +11,11 @@ Parser : Type -> Type
 Parser a = List Char -> Either String (a, List Char)
 
 parseValue' : Parser JsonValue
+parseValue' []                                      = Left "unexpected end of input"
 parseValue' ('n' :: 'u' :: 'l' :: 'l' :: cs)        = Right (JsonNull, cs)
 parseValue' ('t' :: 'r' :: 'u' :: 'e' :: cs)        = Right (JsonBool True, cs)
 parseValue' ('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = Right (JsonBool False, cs)
-parseValue' _ = ?parseValue_rhs
+parseValue' (c :: _)                                = Left $ "unexpected " ++ show c
 
 showValue' : (v : JsonValue) -> Subset (List Char) (\s => parseValue' s = Right (v, []))
 showValue' (JsonNull)       = Element ['n', 'u', 'l', 'l'] Refl
