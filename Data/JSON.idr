@@ -11,15 +11,20 @@ data Tail : List a -> List a -> Type where
   TailHere  : Tail xs xs
   TailThere : Tail xs ys -> Tail (x :: xs) ys
 
+consumes : (n : Nat) -> (cs : List a) -> Tail cs (drop n cs)
+consumes Z cs = TailHere
+consumes (S k) [] = TailHere
+consumes (S k) (x :: xs) = TailThere $ consumes k xs
+
 Parser : Type -> Type
 Parser a = (inp : List Char) -> Either String (a, (outp : List Char ** Tail inp outp))
 
 parseValue : Parser JsonValue
-parseValue []                                      = Left "unexpected end of input"
-parseValue ('n' :: 'u' :: 'l' :: 'l' :: cs)        = Right (JsonNull, (cs ** TailThere (TailThere (TailThere (TailThere TailHere)))))
-parseValue ('t' :: 'r' :: 'u' :: 'e' :: cs)        = Right (JsonBool True, (cs ** TailThere (TailThere (TailThere (TailThere TailHere)))))
-parseValue ('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = Right (JsonBool False, (cs ** TailThere (TailThere (TailThere (TailThere (TailThere TailHere))))))
-parseValue (c :: _)                                = Left $ "unexpected " ++ show c
+parseValue []                                          = Left "unexpected end of input"
+parseValue inp@('n' :: 'u' :: 'l' :: 'l' :: cs)        = Right (JsonNull, (cs ** consumes 4 inp))
+parseValue inp@('t' :: 'r' :: 'u' :: 'e' :: cs)        = Right (JsonBool True, (cs ** consumes 4 inp))
+parseValue inp@('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = Right (JsonBool False, (cs ** consumes 5 inp))
+parseValue (c :: _)                                    = Left $ "unexpected " ++ show c
 
 data ParsesAs : JsonValue -> List Char -> Type where
   MkParsesAs : (v : JsonValue) ->
