@@ -16,6 +16,10 @@ drops Z cs = TailHere
 drops (S k) [] = TailHere
 drops (S k) (x :: xs) = TailThere $ drops k xs
 
+dropsAll : (cs : List a) -> Tail cs []
+dropsAll [] = TailHere
+dropsAll (x :: xs) = TailThere (dropsAll xs)
+
 Parser : Type -> Type
 Parser a = (inp : List Char) -> Either String (a, (outp : List Char ** Tail inp outp))
 
@@ -29,14 +33,13 @@ parseValue (c :: _)                                    = Left $ "unexpected " ++
 data ParsesAs : JsonValue -> List Char -> Type where
   MkParsesAs : (v : JsonValue) ->
                (cs : List Char) ->
-               (pf : Tail cs []) ->
-               parseValue cs = Right (v, ([] ** pf)) ->
+               parseValue cs = Right (v, ([] ** dropsAll cs)) ->
                ParsesAs v cs
 
 showValue : (v : JsonValue) -> Subset (List Char) (ParsesAs v)
-showValue (JsonNull)       = Element ['n','u','l','l'] (MkParsesAs JsonNull ['n','u','l','l'] (TailThere (TailThere (TailThere (TailThere TailHere)))) Refl)
-showValue (JsonBool True)  = Element ['t','r','u','e'] (MkParsesAs (JsonBool True) ['t', 'r', 'u', 'e'] (TailThere (TailThere (TailThere (TailThere TailHere)))) Refl)
-showValue (JsonBool False) = Element ['f','a','l','s','e'] (MkParsesAs (JsonBool False) ['f','a','l','s','e'] (TailThere (TailThere (TailThere (TailThere (TailThere TailHere))))) Refl)
+showValue (JsonNull)       = Element ['n','u','l','l'] (MkParsesAs JsonNull ['n','u','l','l'] Refl)
+showValue (JsonBool True)  = Element ['t','r','u','e'] (MkParsesAs (JsonBool True) ['t', 'r', 'u', 'e'] Refl)
+showValue (JsonBool False) = Element ['f','a','l','s','e'] (MkParsesAs (JsonBool False) ['f','a','l','s','e'] Refl)
 
 Show JsonValue where
   show v = pack (getWitness (showValue v))
