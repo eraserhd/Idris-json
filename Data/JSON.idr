@@ -7,7 +7,10 @@ data JsonValue : Type where
   JsonNull : JsonValue
   JsonBool : Bool -> JsonValue
 
-parseValue' : List Char -> Either String (JsonValue, List Char)
+Parser : Type -> Type
+Parser a = List Char -> Either String (a, List Char)
+
+parseValue' : Parser JsonValue
 parseValue' ('n' :: 'u' :: 'l' :: 'l' :: cs)        = Right (JsonNull, cs)
 parseValue' ('t' :: 'r' :: 'u' :: 'e' :: cs)        = Right (JsonBool True, cs)
 parseValue' ('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = Right (JsonBool False, cs)
