@@ -20,24 +20,26 @@ tailComp : Tail a b -> Tail b c -> Tail a c
 tailComp TailHere y      = y
 tailComp (TailThere z) y = TailThere (tailComp z y)
 
-data ParseResult : Type -> Type where
-  ParseFail : String -> ParseResult a
+data ParseResult : List Char -> Type -> Type where
+  ParseFail : (inp : List Char) ->
+              String ->
+              ParseResult inp a
   ParseOk   : {a : Type} ->
               (value : a) ->
-              (inp  : List Char) ->
+              (inp : List Char) ->
               (outp : List Char) ->
               Tail inp outp ->
-              ParseResult a
+              ParseResult inp a
 
 Parser : Type -> Type
-Parser a = (inp : List Char) -> ParseResult a
+Parser a = (inp : List Char) -> ParseResult inp a
 
 parseValue : Parser JsonValue
-parseValue []                                          = ParseFail "unexpected end of input"
+parseValue inp@[]                                      = ParseFail inp "unexpected end of input"
 parseValue inp@('n' :: 'u' :: 'l' :: 'l' :: cs)        = ParseOk JsonNull inp cs (drops 4 inp)
 parseValue inp@('t' :: 'r' :: 'u' :: 'e' :: cs)        = ParseOk (JsonBool True) inp cs (drops 4 inp)
 parseValue inp@('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = ParseOk (JsonBool False) inp cs (drops 5 inp)
-parseValue (c :: _)                                    = ParseFail $ "unexpected " ++ show c
+parseValue inp@(c :: _)                                = ParseFail inp $ "unexpected " ++ show c
 
 data ParsesAs : JsonValue -> List Char -> Type where
   MkParsesAs : (v : JsonValue) ->
@@ -57,6 +59,6 @@ export
 parse : String -> Either String JsonValue
 parse s = let cs = unpack s in
           case parseValue cs of
-            ParseFail err     => Left err
+            ParseFail _ err   => Left err
             ParseOk v cs [] _ => Right v
             _                 => Left "extra data at end of input"
