@@ -16,9 +16,10 @@ drops Z cs = TailHere
 drops (S k) [] = TailHere
 drops (S k) (x :: xs) = TailThere $ drops k xs
 
-tailComp : Tail a b -> Tail b c -> Tail a c
-tailComp TailHere y      = y
-tailComp (TailThere z) y = TailThere (tailComp z y)
+infixl 5 ::.
+(::.) : Tail a b -> Tail b c -> Tail a c
+(::.) TailHere y      = y
+(::.) (TailThere z) y = TailThere $ z ::. y
 
 data ParseResult : List Char -> Type -> Type where
   ParseFail : (inp : List Char) ->
@@ -40,8 +41,8 @@ parseList p listCs =
     ParseFail inp err             => ParseFail inp err
     ParseOk v inp (',' :: cs) pf1 => case parseList p cs of
                                        ParseFail inp2 err       => ParseFail inp err
-                                       ParseOk vs inp2 outp pf2 => ParseOk (v :: vs) inp outp (tailComp (tailComp pf1 (TailThere TailHere)) pf2)
-    ParseOk v inp outp pf     => ParseOk [v] inp outp pf
+                                       ParseOk vs inp2 outp pf2 => ParseOk (v :: vs) inp outp (pf1 ::. (TailThere TailHere) ::. pf2)
+    ParseOk v inp outp pf         => ParseOk [v] inp outp pf
 
 parseValue : Parser JsonValue
 parseValue inp@[]                                      = ParseFail inp "unexpected end of input"
