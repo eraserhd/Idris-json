@@ -16,10 +16,6 @@ drops Z cs = TailHere
 drops (S k) [] = TailHere
 drops (S k) (x :: xs) = TailThere $ drops k xs
 
-dropsAll : (cs : List a) -> Tail cs []
-dropsAll [] = TailHere
-dropsAll (x :: xs) = TailThere (dropsAll xs)
-
 data ParseResult : Type -> Type where
   ParseFail : String -> ParseResult a
   ParseOk   : {a : Type} ->
@@ -42,7 +38,7 @@ parseValue (c :: _)                                    = ParseFail $ "unexpected
 data ParsesAs : JsonValue -> List Char -> Type where
   MkParsesAs : (v : JsonValue) ->
                (cs : List Char) ->
-               parseValue cs = ParseOk v cs [] (dropsAll cs) ->
+               parseValue cs = ParseOk v cs [] _ ->
                ParsesAs v cs
 
 showValue : (v : JsonValue) -> Subset (List Char) (ParsesAs v)
