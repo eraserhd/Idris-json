@@ -16,6 +16,10 @@ drops Z cs = TailHere
 drops (S k) [] = TailHere
 drops (S k) (x :: xs) = TailThere $ drops k xs
 
+tailComp : Tail a b -> Tail b c -> Tail a c
+tailComp TailHere y      = y
+tailComp (TailThere z) y = TailThere (tailComp z y)
+
 data ParseResult : Type -> Type where
   ParseFail : String -> ParseResult a
   ParseOk   : {a : Type} ->
