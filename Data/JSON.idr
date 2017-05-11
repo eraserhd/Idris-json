@@ -34,6 +34,15 @@ data ParseResult : List Char -> Type -> Type where
 Parser : Type -> Type
 Parser a = (inp : List Char) -> ParseResult inp a
 
+parseList : Parser a -> Parser (List a)
+parseList p listCs =
+  case p listCs of
+    ParseFail inp err             => ParseFail inp err
+    ParseOk v inp (',' :: cs) pf1 => case parseList p cs of
+                                       ParseFail inp2 err       => ParseFail inp err
+                                       ParseOk vs inp2 outp pf2 => ParseOk (v :: vs) inp outp (tailComp (tailComp pf1 (TailThere TailHere)) pf2)
+    ParseOk v inp outp pf     => ParseOk [v] inp outp pf
+
 parseValue : Parser JsonValue
 parseValue inp@[]                                      = ParseFail inp "unexpected end of input"
 parseValue inp@('n' :: 'u' :: 'l' :: 'l' :: cs)        = ParseOk JsonNull inp cs (drops 4 inp)
