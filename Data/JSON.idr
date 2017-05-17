@@ -1,6 +1,7 @@
 module Data.JSON
+import Control.Monad.State
 
--- %default total
+%default total
 
 export
 data JsonValue : Type where
@@ -35,22 +36,23 @@ data ParseResult : List Char -> Type -> Type where
 Parser : Type -> Type
 Parser a = (inp : List Char) -> ParseResult inp a
 
-mutual
-  parseList : Parser (List JsonValue)
-  parseList listCs =
-    case parseValue listCs of
-      ParseFail inp err             => ParseFail inp err
-      ParseOk v inp (',' :: cs) pf1 => case parseList cs of
-                                         ParseFail inp2 err       => ParseFail inp err
-                                         ParseOk vs inp2 outp pf2 => ParseOk (v :: vs) inp outp (pf1 ::. (TailThere TailHere) ::. pf2)
-      ParseOk v inp outp pf         => ParseOk [v] inp outp pf
 
-  parseValue : Parser JsonValue
-  parseValue inp@[]                                      = ParseFail inp "unexpected end of input"
-  parseValue inp@('n' :: 'u' :: 'l' :: 'l' :: cs)        = ParseOk JsonNull inp cs (drops 4 inp)
-  parseValue inp@('t' :: 'r' :: 'u' :: 'e' :: cs)        = ParseOk (JsonBool True) inp cs (drops 4 inp)
-  parseValue inp@('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = ParseOk (JsonBool False) inp cs (drops 5 inp)
-  parseValue inp@(c :: _)                                = ParseFail inp $ "unexpected " ++ show c
+test : State (List Char) Char
+test = do cs <- get
+          case cs of
+            (c :: cs) => do put cs
+                            test
+            []        => pure 'x'
+
+
+
+
+parseValue : Parser JsonValue
+parseValue inp@[]                                      = ParseFail inp "unexpected end of input"
+parseValue inp@('n' :: 'u' :: 'l' :: 'l' :: cs)        = ParseOk JsonNull inp cs (drops 4 inp)
+parseValue inp@('t' :: 'r' :: 'u' :: 'e' :: cs)        = ParseOk (JsonBool True) inp cs (drops 4 inp)
+parseValue inp@('f' :: 'a' :: 'l' :: 's' :: 'e' :: cs) = ParseOk (JsonBool False) inp cs (drops 5 inp)
+parseValue inp@(c :: _)                                = ParseFail inp $ "unexpected " ++ show c
 
 data ParsesAs : JsonValue -> List Char -> Type where
   MkParsesAs : (v : JsonValue) ->
