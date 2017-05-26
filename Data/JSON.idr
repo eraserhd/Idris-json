@@ -37,11 +37,16 @@ show' (JsonArray vs)   = ('[' :: fst insides ++ [']'] ** RArray (snd insides))
                            insides : (s : List Char ** ArrayRepr s vs)
                            insides = makeInsides vs
 
-parse' : (s : List Char) ->
-         Maybe (Subset
-                 (JsonValue, List Char)
-                 (\(v, remainder) => (parsed : List Char ** (Repr parsed v, parsed ++ remainder = s))))
-parse' ('n'::'u'::'l'::'l'::rem)      = Just (Element (JsonNull, rem) (['n','u','l','l'] ** (RNull, Refl)))
-parse' ('f'::'a'::'l'::'s'::'e'::rem) = Just (Element (JsonBool False, rem) (['f','a','l','s','e'] ** (RFalse, Refl)))
-parse' ('t'::'r'::'u'::'e'::rem)      = Just (Element (JsonBool True, rem) (['t','r','u','e'] ** (RTrue, Refl)))
-parse' _                              = Nothing
+data ParseResult : (s : List Char) -> Type where
+  ParseFail : ParseResult a
+  ParseOk : (v : JsonValue) ->
+            (remainder : List Char) ->
+            (Repr parsed v) ->
+            (parsed ++ remainder = a) ->
+            ParseResult a
+
+parse' : (s : List Char) -> ParseResult s
+parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem RNull Refl
+parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem RFalse Refl
+parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem RTrue Refl
+parse' _                              = ParseFail
