@@ -41,8 +41,8 @@ data ParseResult : (s : List Char) -> Type where
   ParseFail : ParseResult a
   ParseOk : (v : JsonValue) ->
             (remainder : List Char) ->
-            (Repr parsed v) ->
-            (parsed ++ remainder = a) ->
+            (repr : Repr parsed v) ->
+            (prefixProof : parsed ++ remainder = a) ->
             ParseResult a
 
 parse' : (s : List Char) -> ParseResult s
