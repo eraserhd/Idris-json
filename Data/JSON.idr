@@ -1,5 +1,6 @@
 module Data.JSON
 
+%access public export
 %default total
 
 public export
@@ -37,13 +38,13 @@ show' (JsonArray vs)   = ('[' :: fst insides ++ [']'] ** RArray (snd insides))
                            insides : (s : List Char ** ArrayRepr s vs)
                            insides = makeInsides vs
 
-data ParseResult : (s : List Char) -> Type where
-  ParseFail : ParseResult a
-  ParseOk : (v : JsonValue) ->
+data ParseResult : List Char -> Type where
+  ParseFail : ParseResult s
+  ParseOk : (value : JsonValue) ->
             (remainder : List Char) ->
-            (repr : Repr parsed v) ->
-            (prefixProof : parsed ++ remainder = a) ->
-            ParseResult a
+            (repr : Repr parsed value) ->
+            (prefixProof : parsed ++ remainder = s) ->
+            ParseResult s
 
 parse' : (s : List Char) -> ParseResult s
 parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem RNull Refl
