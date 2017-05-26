@@ -42,12 +42,12 @@ data ParseResult : List Char -> Type where
   ParseFail : ParseResult s
   ParseOk : (value : JsonValue) ->
             (remainder : List Char) ->
-            (repr : Repr parsed value) ->
             (prefixProof : parsed ++ remainder = s) ->
+            (repr : Repr parsed value) ->
             ParseResult s
 
 parse' : (s : List Char) -> ParseResult s
-parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem RNull Refl
-parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem RFalse Refl
-parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem RTrue Refl
+parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem Refl RNull
+parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem Refl RFalse
+parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem Refl RTrue
 parse' _                              = ParseFail
