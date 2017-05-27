@@ -9,6 +9,8 @@ data JsonValue : Type where
   JsonBool  : Bool -> JsonValue
   JsonArray : (List JsonValue) -> JsonValue
 
+data ParseState = Start | InArray
+
 mutual
   data ArrayRepr : (List Char) -> (List JsonValue) -> Type where
     AREmpty : ArrayRepr [] []
@@ -38,15 +40,15 @@ show' (JsonArray vs)   = ('[' :: fst insides ++ [']'] ** RArray (snd insides))
                            insides : (s : List Char ** ArrayRepr s vs)
                            insides = makeInsides vs
 
-data ParseResult : List Char -> Type where
-  ParseFail : ParseResult s
+data ParseResult : (List Char -> ty -> Type) -> List Char -> Type where
+  ParseFail : ParseResult a s
   ParseOk : (value : JsonValue) ->
             (remainder : List Char) ->
             (prefixProof : parsed ++ remainder = s) ->
-            (repr : Repr parsed value) ->
-            ParseResult s
+            (repr : reprType parsed value) ->
+            ParseResult reprType s
 
-parse' : (s : List Char) -> ParseResult s
+parse' : (s : List Char) -> ParseResult Repr s
 parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem Refl RNull
 parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem Refl RFalse
 parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem Refl RTrue
