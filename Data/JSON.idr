@@ -42,7 +42,7 @@ show' (JsonArray vs)   = ('[' :: fst insides ++ [']'] ** RArray (snd insides))
 
 data ParseResult : (List Char -> ty -> Type) -> List Char -> Type where
   ParseFail : ParseResult a s
-  ParseOk : (value : JsonValue) ->
+  ParseOk : (value : ty) ->
             (remainder : List Char) ->
             (prefixProof : parsed ++ remainder = s) ->
             (repr : reprType parsed value) ->
