@@ -47,8 +47,30 @@ data ParseResult : (List Char -> ty -> Type) -> List Char -> Type where
             (repr : reprType parsed value) ->
             ParseResult reprType (parsed ++ remainder)
 
+partial --FIXME
 parse' : (s : List Char) -> ParseResult Repr s
 parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem RNull
 parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem RFalse
 parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem RTrue
+parse' ('['::arrayInsides)            =
+  case parseInsides arrayInsides of
+    ParseFail => ParseFail
+    ParseOk {parsed} values (']'::remainder) repr =>
+      rewrite (appendAssociative parsed [']'] remainder) in
+      ParseOk (JsonArray values) remainder (RArray repr)
+    _ => ParseFail
+  where
+    partial --FIXME
+    parseInsides : (s : List Char) -> ParseResult ArrayRepr s
+    parseInsides s with (parse' s)
+      parseInsides s | ParseFail = ParseOk [] s AREmpty
+      parseInsides (parsed ++ ',' :: remainder) | (ParseOk value (',' :: remainder) repr) =
+        case parseInsides remainder of
+          ParseFail => ParseFail
+          ParseOk [] _ _ => ParseFail
+          ParseOk {parsed = parsed2} (v :: vs) remainder2 repr2 =>
+            rewrite (appendAssociative parsed (',' :: parsed2) remainder2) in
+            ParseOk {parsed = parsed ++ ',' :: parsed2} (value :: v :: vs) remainder2 (ARComma repr repr2)
+      parseInsides (parsed ++ remainder) | (ParseOk value remainder repr) = ParseOk [value] remainder (ARValue repr)
+
 parse' _                              = ParseFail
