@@ -12,7 +12,6 @@ data JsonValue : Type where
 data ParseState = Start | InArray
 
 mutual
-  -- Semantics
   data ArrayRepr : (List Char) -> (List JsonValue) -> Type where
     AREmpty : ArrayRepr [] []
     ARValue : Repr s v -> ArrayRepr s [v]
@@ -49,11 +48,11 @@ data ParseResult : (List Char -> ty -> Type) -> List Char -> Type where
             ParseResult reprType (parsed ++ remainder)
 
 partial --FIXME
-parse' : (s : List Char) -> ((y : List Char) -> smaller y s -> ParseResult Repr y) -> ParseResult Repr s
-parse' ('n'::'u'::'l'::'l'::rem)      _ = ParseOk JsonNull rem RNull
-parse' ('f'::'a'::'l'::'s'::'e'::rem) _ = ParseOk (JsonBool False) rem RFalse
-parse' ('t'::'r'::'u'::'e'::rem)      _ = ParseOk (JsonBool True) rem RTrue
-parse' ('['::arrayInsides)          rec =
+parse' : (s : List Char) -> ParseResult Repr s
+parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem RNull
+parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem RFalse
+parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem RTrue
+parse' ('['::arrayInsides)            =
   case parseInsides arrayInsides of
     ParseFail => ParseFail
     ParseOk {parsed} values (']'::remainder) repr =>
@@ -61,8 +60,9 @@ parse' ('['::arrayInsides)          rec =
       ParseOk (JsonArray values) remainder (RArray repr)
     _ => ParseFail
   where
+    partial --FIXME
     parseInsides : (s : List Char) -> ParseResult ArrayRepr s
-    parseInsides s with (rec s ?what)
+    parseInsides s with (parse' s)
       parseInsides s | ParseFail = ParseOk [] s AREmpty
       parseInsides (parsed ++ ',' :: remainder) | (ParseOk value (',' :: remainder) repr) =
         case parseInsides remainder of
@@ -73,4 +73,4 @@ parse' ('['::arrayInsides)          rec =
             ParseOk {parsed = parsed ++ ',' :: parsed2} (value :: v :: vs) remainder2 (ARComma repr repr2)
       parseInsides (parsed ++ remainder) | (ParseOk value remainder repr) = ParseOk [value] remainder (ARValue repr)
 
-parse' _                              _ = ParseFail
+parse' _                              = ParseFail
