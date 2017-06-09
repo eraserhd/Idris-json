@@ -47,13 +47,27 @@ data ParseResult : (List Char -> ty -> Type) -> List Char -> Type where
             (repr : reprType parsed value) ->
             ParseResult reprType (parsed ++ remainder)
 
+
+data Tail : List a -> List a -> Type where
+  TailCons : Tail t (h :: t)
+  TailStep : Tail t xs -> Tail t (x :: xs)
+
+WellFounded Tail where
+  wellFounded l {a} = Access (acc l)
+                      where
+                        acc : (full, tail : List a) -> Tail tail full -> Accessible Tail tail
+                        acc (h :: tail) tail TailCons           = Access (acc tail)
+                        acc (x :: xs)   tail (TailStep witness) = acc xs tail witness
+
+{-
+
 partial --FIXME
 parse' : (s : List Char) -> ParseResult Repr s
 parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem RNull
 parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem RFalse
 parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem RTrue
 parse' ('['::arrayInsides)            =
-  case parseInsides arrayInsides of
+  case wfInd parseInsides arrayInsides of
     ParseFail => ParseFail
     ParseOk {parsed} values (']'::remainder) repr =>
       rewrite (appendAssociative parsed [']'] remainder) in
@@ -61,16 +75,21 @@ parse' ('['::arrayInsides)            =
     _ => ParseFail
   where
     partial --FIXME
-    parseInsides : (s : List Char) -> ParseResult ArrayRepr s
-    parseInsides s with (parse' s)
-      parseInsides s | ParseFail = ParseOk [] s AREmpty
-      parseInsides (parsed ++ ',' :: remainder) | (ParseOk value (',' :: remainder) repr) =
-        case parseInsides remainder of
+    parseInsides : (s : List Char) -> ((y : List Char) -> smaller y s -> ParseResult ArrayRepr s) -> ParseResult ArrayRepr s
+    parseInsides s rec with (parse' s)
+      parseInsides s rec | ParseFail = ParseOk [] s AREmpty
+      parseInsides (parsed ++ ',' :: remainder) rec | (ParseOk value (',' :: remainder) repr) =
+        ?comma_rhs
+
+      {-
+        case rec remainder ?smallerProof of
           ParseFail => ParseFail
           ParseOk [] _ _ => ParseFail
           ParseOk {parsed = parsed2} (v :: vs) remainder2 repr2 =>
             rewrite (appendAssociative parsed (',' :: parsed2) remainder2) in
             ParseOk {parsed = parsed ++ ',' :: parsed2} (value :: v :: vs) remainder2 (ARComma repr repr2)
-      parseInsides (parsed ++ remainder) | (ParseOk value remainder repr) = ParseOk [value] remainder (ARValue repr)
+      -}
+      parseInsides (parsed ++ remainder) rec | (ParseOk value remainder repr) = ParseOk [value] remainder (ARValue repr)
 
 parse' _                              = ParseFail
+-}
