@@ -62,6 +62,7 @@ parseStep : (s : List Char) -> ((y : List Char) -> Tail y s -> ParseResult Repr 
 parseStep ('n'::'u'::'l'::'l'::rem)      rec = ParseOk JsonNull rem RNull
 parseStep ('f'::'a'::'l'::'s'::'e'::rem) rec = ParseOk (JsonBool False) rem RFalse
 parseStep ('t'::'r'::'u'::'e'::rem)      rec = ParseOk (JsonBool True) rem RTrue
+parseStep ('['::']'::rem)                rec = ParseOk (JsonArray []) rem (RArray AREmpty)
 parseStep ('['::arrayInsides)            rec =
   case rec arrayInsides TailCons of
     ParseFail => ParseFail
