@@ -59,37 +59,8 @@ WellFounded Tail where
                         acc (h :: tail) tail TailCons           = Access (acc tail)
                         acc (x :: xs)   tail (TailStep witness) = acc xs tail witness
 
-{-
-
-partial --FIXME
 parse' : (s : List Char) -> ParseResult Repr s
 parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem RNull
 parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem RFalse
 parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem RTrue
-parse' ('['::arrayInsides)            =
-  case wfInd parseInsides arrayInsides of
-    ParseFail => ParseFail
-    ParseOk {parsed} values (']'::remainder) repr =>
-      rewrite (appendAssociative parsed [']'] remainder) in
-      ParseOk (JsonArray values) remainder (RArray repr)
-    _ => ParseFail
-  where
-    partial --FIXME
-    parseInsides : (s : List Char) -> ((y : List Char) -> smaller y s -> ParseResult ArrayRepr s) -> ParseResult ArrayRepr s
-    parseInsides s rec with (parse' s)
-      parseInsides s rec | ParseFail = ParseOk [] s AREmpty
-      parseInsides (parsed ++ ',' :: remainder) rec | (ParseOk value (',' :: remainder) repr) =
-        ?comma_rhs
-
-      {-
-        case rec remainder ?smallerProof of
-          ParseFail => ParseFail
-          ParseOk [] _ _ => ParseFail
-          ParseOk {parsed = parsed2} (v :: vs) remainder2 repr2 =>
-            rewrite (appendAssociative parsed (',' :: parsed2) remainder2) in
-            ParseOk {parsed = parsed ++ ',' :: parsed2} (value :: v :: vs) remainder2 (ARComma repr repr2)
-      -}
-      parseInsides (parsed ++ remainder) rec | (ParseOk value remainder repr) = ParseOk [value] remainder (ARValue repr)
-
 parse' _                              = ParseFail
--}
