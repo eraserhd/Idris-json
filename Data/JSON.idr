@@ -69,8 +69,14 @@ parseStep ('['::arrayInsides)            rec =
     ParseOk {parsed} value (']'::rem) repr =>
       rewrite appendAssociative ('[' :: parsed) [']'] rem in
       ParseOk (JsonArray [value]) rem (RArray (ARValue repr))
-    ParseOk value tail repr => ParseFail
+    ParseOk {parsed} value (','::more) repr =>
+      ?result
+
+    ParseOk _ _ _ => ParseFail
   where
-    parseMore : (s : List Char) -> ParseResult ArrayRepr s
+    parseMore : (s, y : List Char) -> Tail y s -> ParseResult ArrayRepr y
 
 parseStep _                              rec = ParseFail
+
+parse : (s : List Char) -> ParseResult Repr s
+parse = wfInd parseStep
