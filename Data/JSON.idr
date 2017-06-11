@@ -66,10 +66,10 @@ parseStep ('['::']'::rem)                rec = ParseOk (JsonArray []) rem (RArra
 parseStep ('['::arrayInsides)            rec =
   case rec arrayInsides TailCons of
     ParseFail => ParseFail
-    ParseOk {parsed} value (']'::moreValues) repr =>
-      rewrite appendAssociative ('[' :: parsed) [']'] moreValues in
-      ParseOk (JsonArray [value]) moreValues (RArray (ARValue repr))
-    ParseOk value tail repr => ?what_3
+    ParseOk {parsed} value (']'::rem) repr =>
+      rewrite appendAssociative ('[' :: parsed) [']'] rem in
+      ParseOk (JsonArray [value]) rem (RArray (ARValue repr))
+    ParseOk value tail repr => ParseFail
   where
     parseMore : (s : List Char) -> ParseResult ArrayRepr s
 
