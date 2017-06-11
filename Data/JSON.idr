@@ -59,8 +59,8 @@ WellFounded Tail where
                         acc (h :: tail) tail TailCons           = Access (acc tail)
                         acc (x :: xs)   tail (TailStep witness) = acc xs tail witness
 
-parse' : (s : List Char) -> ParseResult Repr s
-parse' ('n'::'u'::'l'::'l'::rem)      = ParseOk JsonNull rem RNull
-parse' ('f'::'a'::'l'::'s'::'e'::rem) = ParseOk (JsonBool False) rem RFalse
-parse' ('t'::'r'::'u'::'e'::rem)      = ParseOk (JsonBool True) rem RTrue
-parse' _                              = ParseFail
+parseStep : (s : List Char) -> ((y : List Char) -> Tail y s -> ParseResult Repr y) -> ParseResult Repr s
+parseStep ('n'::'u'::'l'::'l'::rem)      rec = ParseOk JsonNull rem RNull
+parseStep ('f'::'a'::'l'::'s'::'e'::rem) rec = ParseOk (JsonBool False) rem RFalse
+parseStep ('t'::'r'::'u'::'e'::rem)      rec = ParseOk (JsonBool True) rem RTrue
+parseStep _                              rec = ParseFail
