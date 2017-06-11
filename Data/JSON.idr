@@ -63,18 +63,13 @@ parseStep ('n'::'u'::'l'::'l'::rem)      rec = ParseOk JsonNull rem RNull
 parseStep ('f'::'a'::'l'::'s'::'e'::rem) rec = ParseOk (JsonBool False) rem RFalse
 parseStep ('t'::'r'::'u'::'e'::rem)      rec = ParseOk (JsonBool True) rem RTrue
 parseStep ('['::']'::rem)                rec = ParseOk (JsonArray []) rem (RArray AREmpty)
-parseStep ('['::arrayInsides)            rec =
-  case rec arrayInsides TailCons of
-    ParseFail => ParseFail
-    ParseOk {parsed} value (']'::rem) repr =>
-      rewrite appendAssociative ('[' :: parsed) [']'] rem in
-      ParseOk (JsonArray [value]) rem (RArray (ARValue repr))
-    ParseOk {parsed} value (','::more) repr =>
-      ?result
-
-    ParseOk _ _ _ => ParseFail
-  where
-    parseMore : (s, y : List Char) -> Tail y s -> ParseResult ArrayRepr y
+parseStep ('['::arrayInsides)            rec with (rec arrayInsides TailCons)
+  parseStep ('['::arrayInsides)                   rec | ParseFail = ParseFail
+  parseStep ('['::(parsed ++ (']' :: remainder))) rec | ParseOk value (']' :: remainder) repr =
+    rewrite appendAssociative ('[' :: parsed) [']'] remainder in
+    ParseOk (JsonArray [value]) remainder (RArray (ARValue repr))
+  parseStep ('['::(parsed ++ (',' :: remainder))) rec | ParseOk value (',' :: remainder) repr = ?parseStep_rhs_3
+  parseStep ('['::(parsed ++ remainder))          rec | ParseOk value remainder repr = ParseFail
 
 parseStep _                              rec = ParseFail
 
