@@ -40,17 +40,16 @@ show' (JsonArray vs)   = ('[' :: fst insides ++ [']'] ** RArray (snd insides))
                            insides : (s : List Char ** ArrayRepr s vs)
                            insides = makeInsides vs
 
+data Tail : List a -> List a -> Type where
+  TailCons : Tail t (h :: t)
+  TailStep : Tail t xs -> Tail t (x :: xs)
+
 data ParseResult : (List Char -> ty -> Type) -> List Char -> Type where
   ParseFail : ParseResult a s
   ParseOk : (value : ty) ->
             (remainder : List Char) ->
             (repr : reprType parsed value) ->
             ParseResult reprType (parsed ++ remainder)
-
-
-data Tail : List a -> List a -> Type where
-  TailCons : Tail t (h :: t)
-  TailStep : Tail t xs -> Tail t (x :: xs)
 
 WellFounded Tail where
   wellFounded l {a} = Access (acc l)
@@ -63,4 +62,14 @@ parseStep : (s : List Char) -> ((y : List Char) -> Tail y s -> ParseResult Repr 
 parseStep ('n'::'u'::'l'::'l'::rem)      rec = ParseOk JsonNull rem RNull
 parseStep ('f'::'a'::'l'::'s'::'e'::rem) rec = ParseOk (JsonBool False) rem RFalse
 parseStep ('t'::'r'::'u'::'e'::rem)      rec = ParseOk (JsonBool True) rem RTrue
+parseStep ('['::arrayInsides)            rec =
+  case rec arrayInsides TailCons of
+    ParseFail => ParseFail
+    ParseOk {parsed} value (']'::moreValues) repr =>
+      rewrite appendAssociative ('[' :: parsed) [']'] moreValues in
+      ParseOk (JsonArray [value]) moreValues (RArray (ARValue repr))
+    ParseOk value tail repr => ?what_3
+  where
+    parseMore : (s : List Char) -> ParseResult ArrayRepr s
+
 parseStep _                              rec = ParseFail
