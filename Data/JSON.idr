@@ -58,6 +58,8 @@ WellFounded Tail where
                         acc (h :: tail) tail TailCons           = Access (acc tail)
                         acc (x :: xs)   tail (TailStep witness) = acc xs tail witness
 
+parseArrayMore : (s : List Char) -> ParseResult ArrayRepr s
+
 parseStep : (s : List Char) -> ((y : List Char) -> Tail y s -> ParseResult Repr y) -> ParseResult Repr s
 parseStep ('n'::'u'::'l'::'l'::rem)      rec = ParseOk JsonNull rem RNull
 parseStep ('f'::'a'::'l'::'s'::'e'::rem) rec = ParseOk (JsonBool False) rem RFalse
@@ -65,11 +67,14 @@ parseStep ('t'::'r'::'u'::'e'::rem)      rec = ParseOk (JsonBool True) rem RTrue
 parseStep ('['::']'::rem)                rec = ParseOk (JsonArray []) rem (RArray AREmpty)
 parseStep ('['::arrayInsides)            rec with (rec arrayInsides TailCons)
   parseStep ('['::arrayInsides)                   rec | ParseFail = ParseFail
-  parseStep ('['::(parsed ++ (']' :: remainder))) rec | ParseOk value (']' :: remainder) repr =
+  parseStep ('['::(parsed ++ (']' :: remainder))) rec | ParseOk v (']' :: remainder) repr =
     rewrite appendAssociative ('[' :: parsed) [']'] remainder in
-    ParseOk (JsonArray [value]) remainder (RArray (ARValue repr))
-  parseStep ('['::(parsed ++ (',' :: remainder))) rec | ParseOk value (',' :: remainder) repr = ?parseStep_rhs_3
-  parseStep ('['::(parsed ++ remainder))          rec | ParseOk value remainder repr = ParseFail
+    ParseOk (JsonArray [v]) remainder (RArray (ARValue repr))
+  parseStep ('['::(parsed ++ (',' :: remainder))) rec | ParseOk v (',' :: remainder) repr with (parseArrayMore remainder)
+    parseStep ('['::(parsed ++ (',' :: remainder))) rec | ParseOk v (',' :: remainder) repr | ParseFail = ParseFail
+    --parseStep ('['::(parsed ++ ((',' :: more) ++ (']'::remainder2)))) rec | ParseOk v (',' :: (more ++ (']'::remainder2))) repr | ParseOk {parsed = more} vs (']'::remainder2) arepr = ParseOk (JsonArray (v :: vs)) remainder2 (RArray (ARComma repr arepr))
+    parseStep _ rec | ParseOk v _ repr | ParseOk _ _ _ = ParseFail
+  parseStep ('['::(parsed ++ remainder))          rec | ParseOk _ _ _ = ParseFail
 
 parseStep _                              rec = ParseFail
 
