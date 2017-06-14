@@ -12,32 +12,32 @@ data JsonValue : Type where
 data ParseState = Start | InArray
 
 mutual
-  data ArrayRepr : (List Char) -> (List JsonValue) -> Type where
-    AREmpty : ArrayRepr [] []
-    ARValue : Repr s v -> ArrayRepr s [v]
-    ARComma : Repr xs xv -> ArrayRepr s (v :: vs) -> ArrayRepr (xs ++ [','] ++ s) (xv :: v :: vs)
+  data ArrayRepr : (nonEmpty : Bool) -> (List Char) -> (List JsonValue) -> Type where
+    AREmpty : ArrayRepr False [] []
+    ARValue : Repr s v -> ArrayRepr True s [v]
+    ARComma : Repr xs xv -> ArrayRepr True s vs -> ArrayRepr True (xs ++ [','] ++ s) (xv :: vs)
 
   data Repr : (List Char) -> JsonValue -> Type where
     RNull       : Repr ['n','u','l','l'] JsonNull
     RTrue       : Repr ['t','r','u','e'] (JsonBool True)
     RFalse      : Repr ['f','a','l','s','e'] (JsonBool False)
-    RArray      : ArrayRepr inside vs -> Repr ('[' :: inside ++ [']']) (JsonArray vs)
+    RArray      : ArrayRepr _ inside vs -> Repr ('[' :: inside ++ [']']) (JsonArray vs)
 
 show' : (v : JsonValue) -> (s : List Char ** Repr s v)
 show' JsonNull         = (['n','u','l','l'] ** RNull)
 show' (JsonBool False) = (['f','a','l','s','e'] ** RFalse)
 show' (JsonBool True)  = (['t','r','u','e'] ** RTrue)
-show' (JsonArray vs)   = ('[' :: fst insides ++ [']'] ** RArray (snd insides))
+show' (JsonArray vs)   = ('[' :: fst (fst insides) ++ [']'] ** RArray (snd insides))
                          where
-                           makeInsides : (xs : List JsonValue) -> (s : List Char ** ArrayRepr s xs)
-                           makeInsides [] = ([] ** AREmpty)
+                           makeInsides : (xs : List JsonValue) -> (inf : (List Char, Bool) ** ArrayRepr (snd inf) (fst inf) xs)
+                           makeInsides [] = (([], False) ** AREmpty)
                            makeInsides [x] = let (s ** prf) = show' x in
-                                             (s ** ARValue prf)
+                                             ((s, True) ** ARValue prf)
                            makeInsides (x :: y :: ys) = let (sx ** xProof) = show' x
-                                                            (sxs ** xsProof) = makeInsides (y :: ys) in
-                                                        (sx ++ [','] ++ sxs ** ARComma xProof xsProof)
+                                                            ((sxs, True) ** xsProof) = makeInsides (y :: ys) in
+                                                        ((sx ++ [','] ++ sxs, True) ** ARComma xProof xsProof)
 
-                           insides : (s : List Char ** ArrayRepr s vs)
+                           insides : (inf : (List Char, Bool) ** ArrayRepr (snd inf) (fst inf) vs)
                            insides = makeInsides vs
 
 data Tail : List a -> List a -> Type where
@@ -58,7 +58,7 @@ WellFounded Tail where
                         acc (h :: tail) tail TailCons           = Access (acc tail)
                         acc (x :: xs)   tail (TailStep witness) = acc xs tail witness
 
-parseArrayMore : (s : List Char) -> ParseResult ArrayRepr s
+parseArrayMore : (s : List Char) -> ParseResult (ArrayRepr True) s
 
 parseStep : (s : List Char) -> ((y : List Char) -> Tail y s -> ParseResult Repr y) -> ParseResult Repr s
 parseStep ('n'::'u'::'l'::'l'::rem)      rec = ParseOk JsonNull rem RNull
@@ -72,7 +72,9 @@ parseStep ('['::arrayInsides)            rec with (rec arrayInsides TailCons)
     ParseOk (JsonArray [v]) remainder (RArray (ARValue repr))
   parseStep ('['::(parsed ++ (',' :: remainder))) rec | ParseOk v (',' :: remainder) repr with (parseArrayMore remainder)
     parseStep ('['::(parsed ++ (',' :: remainder))) rec | ParseOk v (',' :: remainder) repr | ParseFail = ParseFail
-    --parseStep ('['::(parsed ++ ((',' :: more) ++ (']'::remainder2)))) rec | ParseOk v (',' :: (more ++ (']'::remainder2))) repr | ParseOk {parsed = more} vs (']'::remainder2) arepr = ParseOk (JsonArray (v :: vs)) remainder2 (RArray (ARComma repr arepr))
+    parseStep ('['::(parsed ++ ((',' :: more) ++ (']'::remainder2)))) rec | ParseOk v (',' :: (more ++ (']'::remainder2))) repr | ParseOk {parsed = more} vs (']'::remainder2) arepr =
+      rewrite appendAssociative parsed [','] more in
+      ParseOk (JsonArray (v :: vs)) remainder2 (RArray (ARComma repr arepr))
     parseStep _ rec | ParseOk v _ repr | ParseOk _ _ _ = ParseFail
   parseStep ('['::(parsed ++ remainder))          rec | ParseOk _ _ _ = ParseFail
 
