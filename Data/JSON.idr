@@ -103,6 +103,9 @@ S_string' : String -> List Char -> Type
 S_string' = Map (\(_, cs, _) => pack cs) $ CharS '"' .. ListS S_char .. CharS '"'
 
 mutual
+  data S_member : (String, JsonValue) -> List Char -> Type where
+    MkMember : (S_string' .. S_name_separator .. S_value) (k, _, v) text -> S_member (k, v) text
+
   data S_value : JsonValue -> List Char -> Type where
     S_null   : S_value JsonNull ['n','u','l','l']
     S_true   : S_value (JsonBool True) ['t','r','u','e']
