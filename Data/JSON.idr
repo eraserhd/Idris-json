@@ -34,10 +34,7 @@ data ListS : (valueType -> List Char -> Type) ->
   Nil  : ListS sem [] []
   (::) : sem v r -> ListS sem vs rs -> ListS sem (v :: vs) (r ++ rs)
 
-data CharS : Char ->
-             Char ->
-             List Char ->
-             Type where
+data CharS : Char -> Char -> List Char -> Type where
   Found : CharS c c [c]
 
 data Map : (func : a -> b) ->
