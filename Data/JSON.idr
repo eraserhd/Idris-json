@@ -1,5 +1,7 @@
 module Data.JSON.Token
 
+import Data.So
+
 public export
 data JsonValue : Type where
   JsonNull   : JsonValue
@@ -75,13 +77,23 @@ S_value_separator : () -> List Char -> Type
 S_value_separator = S_structural_char ','
 
 total
+allowedUnescaped : Char -> Bool
+allowedUnescaped c = let cv = ord c in
+                     (cv >= 0x20 && cv <= 0x21) ||
+                     (cv >= 0x23 && cv <= 0x5B) ||
+                     (cv >= 0x5D && cv <= 0x10FFFF)
+
+data S_char : Char -> List Char -> Type where
+  S_unescaped : (c : Char) -> So (allowedUnescaped c) -> S_char c [c]
+
+total
 toJsonList : ((), Maybe (JsonValue, List ((), JsonValue)), ()) -> List JsonValue
 toJsonList (_, (Just (v, vs)), _) = v :: map snd vs
 toJsonList (_, Nothing, _) = []
 
 data S_value : JsonValue -> List Char -> Type where
-  S_null  : S_value JsonNull ['n','u','l','l']
-  S_true  : S_value (JsonBool True) ['t','r','u','e']
-  S_false : S_value (JsonBool False) ['f','a','l','s','e']
-  S_array : (S_begin_array .. (MaybeS (S_value .. ListS (S_value_separator .. S_value))) .. S_end_array) value text ->
-            S_value (JsonArray $ toJsonList value) text
+  S_null   : S_value JsonNull ['n','u','l','l']
+  S_true   : S_value (JsonBool True) ['t','r','u','e']
+  S_false  : S_value (JsonBool False) ['f','a','l','s','e']
+  S_array  : (S_begin_array .. (MaybeS (S_value .. ListS (S_value_separator .. S_value))) .. S_end_array) value text ->
+             S_value (JsonArray $ toJsonList value) text
