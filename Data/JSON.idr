@@ -43,45 +43,45 @@ data Map : (func : a -> b) ->
            b -> List Char -> Type where
   MakeMap : sem v text -> Map func sem (func v) text
 
-data WhitespaceChar : Char -> List Char -> Type where
-  Space          : WhitespaceChar ' '  [' ']
-  HorizontalTab  : WhitespaceChar '\t' ['\t']
-  VerticalTab    : WhitespaceChar '\v' ['\v']
-  LineFeed       : WhitespaceChar '\n' ['\n']
-  CarriageReturn : WhitespaceChar '\r' ['\r']
+data S_whitespace' : Char -> List Char -> Type where
+  Space          : S_whitespace' ' '  [' ']
+  HorizontalTab  : S_whitespace' '\t' ['\t']
+  VerticalTab    : S_whitespace' '\v' ['\v']
+  LineFeed       : S_whitespace' '\n' ['\n']
+  CarriageReturn : S_whitespace' '\r' ['\r']
 
-Whitespace : List Char -> List Char -> Type
-Whitespace = ListS WhitespaceChar
+S_whitespace : List Char -> List Char -> Type
+S_whitespace = ListS S_whitespace'
 
-StructuralChar : Char -> () -> List Char -> Type
-StructuralChar c = Map (const ()) (Whitespace .. CharS c .. Whitespace)
+S_structural_char : Char -> () -> List Char -> Type
+S_structural_char c = Map (const ()) (S_whitespace .. CharS c .. S_whitespace)
 
-BeginArray : () -> List Char -> Type
-BeginArray = StructuralChar '['
+S_begin_array : () -> List Char -> Type
+S_begin_array = S_structural_char '['
 
-BeginObject : () -> List Char -> Type
-BeginObject = StructuralChar '{'
+S_begin_object : () -> List Char -> Type
+S_begin_object = S_structural_char '{'
 
-EndArray : () -> List Char -> Type
-EndArray = StructuralChar ']'
+S_end_array : () -> List Char -> Type
+S_end_array = S_structural_char ']'
 
-EndObject : () -> List Char -> Type
-EndObject = StructuralChar '}'
+S_end_object : () -> List Char -> Type
+S_end_object = S_structural_char '}'
 
-NameSeparator : () -> List Char -> Type
-NameSeparator = StructuralChar ':'
+S_name_separator : () -> List Char -> Type
+S_name_separator = S_structural_char ':'
 
-ValueSeparator : () -> List Char -> Type
-ValueSeparator = StructuralChar ','
+S_value_separator : () -> List Char -> Type
+S_value_separator = S_structural_char ','
 
 total
 toJsonArray : ((), Maybe (JsonValue, List ((), JsonValue)), ()) -> List JsonValue
 toJsonArray (_, (Just (v, vs)), _) = v :: map snd vs
 toJsonArray (_, Nothing, _) = []
 
-data Value : JsonValue -> List Char -> Type where
-  NullValue  : Value JsonNull ['n','u','l','l']
-  TrueValue  : Value (JsonBool True) ['t','r','u','e']
-  FalseValue : Value (JsonBool False) ['f','a','l','s','e']
-  ArrayValue : (BeginArray .. (MaybeS (Value .. ListS (ValueSeparator .. Value))) .. EndArray) value text ->
-               Value (JsonArray $ toJsonArray value) text
+data S_value : JsonValue -> List Char -> Type where
+  S_null  : S_value JsonNull ['n','u','l','l']
+  S_true  : S_value (JsonBool True) ['t','r','u','e']
+  S_false : S_value (JsonBool False) ['f','a','l','s','e']
+  S_array : (S_begin_array .. (MaybeS (S_value .. ListS (S_value_separator .. S_value))) .. S_end_array) value text ->
+            S_value (JsonArray $ toJsonArray value) text
