@@ -93,14 +93,19 @@ data S_char : Char -> List Char -> Type where
   S_escape_tab              : S_char '\t' ['\\','t']
 
 
+S_string' : String -> List Char -> Type
+S_string' = Map (\(_, cs, _) => pack cs) $ CharS '"' .. ListS S_char .. CharS '"'
+
 
 total
 toJsonList : ((), Maybe (JsonValue, List ((), JsonValue)), ()) -> List JsonValue
 toJsonList (_, (Just (v, vs)), _) = v :: map snd vs
 toJsonList (_, Nothing, _) = []
 
-S_string' : String -> List Char -> Type
-S_string' = Map (\(_, cs, _) => pack cs) $ CharS '"' .. ListS S_char .. CharS '"'
+total
+toJsonPropList : ((), Maybe ((String, JsonValue), List ((), String, JsonValue)), ()) -> List (String, JsonValue)
+toJsonPropList (_, Just (kv, kvs), _) = kv :: map snd kvs
+toJsonPropList (_, Nothing, _) = []
 
 mutual
   data S_member : (String, JsonValue) -> List Char -> Type where
@@ -113,3 +118,5 @@ mutual
     S_string : S_string' s text -> S_value (JsonString s) text
     S_array  : (S_begin_array .. (MaybeS (S_value .. ListS (S_value_separator .. S_value))) .. S_end_array) value text ->
                S_value (JsonArray $ toJsonList value) text
+    S_object : (S_begin_object .. (MaybeS (S_member .. ListS (S_value_separator .. S_member))) .. S_end_object) value text ->
+               S_value (JsonObject $ toJsonPropList value) text
