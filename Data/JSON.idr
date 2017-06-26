@@ -99,11 +99,14 @@ toJsonList : ((), Maybe (JsonValue, List ((), JsonValue)), ()) -> List JsonValue
 toJsonList (_, (Just (v, vs)), _) = v :: map snd vs
 toJsonList (_, Nothing, _) = []
 
-data S_value : JsonValue -> List Char -> Type where
-  S_null   : S_value JsonNull ['n','u','l','l']
-  S_true   : S_value (JsonBool True) ['t','r','u','e']
-  S_false  : S_value (JsonBool False) ['f','a','l','s','e']
-  S_string : (CharS '"' .. ListS S_char .. CharS '"') (_, cs,_) text ->
-             S_value (JsonString $ pack cs) text
-  S_array  : (S_begin_array .. (MaybeS (S_value .. ListS (S_value_separator .. S_value))) .. S_end_array) value text ->
-             S_value (JsonArray $ toJsonList value) text
+S_string' : String -> List Char -> Type
+S_string' = Map (\(_, cs, _) => pack cs) $ CharS '"' .. ListS S_char .. CharS '"'
+
+mutual
+  data S_value : JsonValue -> List Char -> Type where
+    S_null   : S_value JsonNull ['n','u','l','l']
+    S_true   : S_value (JsonBool True) ['t','r','u','e']
+    S_false  : S_value (JsonBool False) ['f','a','l','s','e']
+    S_string : S_string' s text -> S_value (JsonString s) text
+    S_array  : (S_begin_array .. (MaybeS (S_value .. ListS (S_value_separator .. S_value))) .. S_end_array) value text ->
+               S_value (JsonArray $ toJsonList value) text
