@@ -9,6 +9,7 @@ data JsonValue : Type where
   JsonString : String -> JsonValue
   JsonArray  : List JsonValue -> JsonValue
   JsonObject : List (String, JsonValue) -> JsonValue
+  JsonNumber : Double -> JsonValue
 
 
 infixr 7 ..
