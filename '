@@ -74,7 +74,6 @@ NameSeparator = StructuralChar ':'
 ValueSeparator : () -> List Char -> Type
 ValueSeparator = StructuralChar ','
 
-total
 toJsonArray : ((), Maybe (JsonValue, List ((), JsonValue)), ()) -> List JsonValue
 toJsonArray (_, (Just (v, vs)), _) = v :: map snd vs
 toJsonArray (_, Nothing, _) = []
