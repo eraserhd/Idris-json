@@ -2,6 +2,8 @@ module Data.JSON.Token
 
 import Data.So
 
+%default total
+
 public export
 data JsonValue : Type where
   JsonNull   : JsonValue
@@ -74,7 +76,6 @@ S_name_separator = S_structural_char ':'
 S_value_separator : () -> List Char -> Type
 S_value_separator = S_structural_char ','
 
-total
 allowedUnescaped : Char -> Bool
 allowedUnescaped c = let cv = ord c in
                      (cv >= 0x20 && cv <= 0x21) ||
@@ -98,12 +99,10 @@ S_string' : String -> List Char -> Type
 S_string' = Map (\(_, cs, _) => pack cs) $ CharS '"' .. ListS S_char .. CharS '"'
 
 
-total
 toJsonList : ((), Maybe (JsonValue, List ((), JsonValue)), ()) -> List JsonValue
 toJsonList (_, (Just (v, vs)), _) = v :: map snd vs
 toJsonList (_, Nothing, _) = []
 
-total
 toJsonPropList : ((), Maybe ((String, JsonValue), List ((), String, JsonValue)), ()) -> List (String, JsonValue)
 toJsonPropList (_, Just (kv, kvs), _) = kv :: map snd kvs
 toJsonPropList (_, Nothing, _) = []
