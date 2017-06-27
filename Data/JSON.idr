@@ -82,8 +82,23 @@ allowedUnescaped c = let cv = ord c in
                      (cv >= 0x23 && cv <= 0x5B) ||
                      (cv >= 0x5D && cv <= 0x10FFFF)
 
+hexValue : Char -> Int
+hexValue c = if isDigit c
+             then ord c - ord '0'
+             else ord (toUpper c) - ord 'A' + 10
+
+data S_HEXDIG : Int -> List Char -> Type where
+  HexDigit : (c : Char) -> So (isHexDigit c) -> S_HEXDIG (hexValue c) [c]
+
+HexQuad : Int -> List Char -> Type
+HexQuad = Map (\(a,b,c,d) => a*0x1000 + b*0x100 + c*0x10 +d*0x1) (S_HEXDIG .. S_HEXDIG .. S_HEXDIG .. S_HEXDIG)
+
 data S_char : Char -> List Char -> Type where
   S_unescaped               : (c : Char) -> So (allowedUnescaped c) -> S_char c [c]
+
+  S_unicode_escape          : (c : Char) ->
+                              HexQuad (ord c) text ->
+                              S_char c ('\\' :: 'u' :: text)
 
   S_escape_quotation_mark   : S_char '"'  ['\\','"']
   S_escape_reverse_solidus  : S_char '\\' ['\\','\\']
