@@ -97,6 +97,7 @@ data S_char : Char -> List Char -> Type where
   S_unescaped               : (c : Char) -> So (allowedUnescaped c) -> S_char c [c]
 
   S_unicode_escape          : (c : Char) ->
+                              So (ord c <= 0xFFFF) ->
                               HexQuad (ord c) text ->
                               S_char c ('\\' :: 'u' :: text)
 
