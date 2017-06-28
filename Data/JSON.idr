@@ -88,6 +88,8 @@ hexValue c = if isDigit c
              then ord c - ord '0'
              else ord (toUpper c) - ord 'A' + 10
 
+data S_DIGIT : Int -> List Char -> Type where
+  Digit : (c : Char) -> {auto ok : So (isDigit c)} -> S_DIGIT (hexValue c) [c]
 data S_HEXDIG : Int -> List Char -> Type where
   HexDigit : (c : Char) -> So (isHexDigit c) -> S_HEXDIG (hexValue c) [c]
 
