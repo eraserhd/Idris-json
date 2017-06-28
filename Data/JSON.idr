@@ -103,6 +103,11 @@ data S_e : () -> List Char -> Type where
   UpperCaseE : S_e () ['E']
   LowerCaseE : S_e () ['e']
 
+data Sign = Plus | Minus
+data S_sign : Bool -> Sign -> List Char -> Type where
+  S_plus : S_sign True Plus ['+']
+  S_minus : S_sign plusAllowed Minus ['-']
+
 data S_decimal_point : () -> List Char -> Type where
   DecimalPoint : S_decimal_point () ['.']
 
