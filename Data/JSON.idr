@@ -92,6 +92,8 @@ data S_DIGIT : Int -> List Char -> Type where
   Digit : (c : Char) -> {auto ok : So (isDigit c)} -> S_DIGIT (hexValue c) [c]
 data S_HEXDIG : Int -> List Char -> Type where
   HexDigit : (c : Char) -> {auto ok : So (isHexDigit c)} -> S_HEXDIG (hexValue c) [c]
+data S_digit1_9 : Int -> List Char -> Type where
+  Digit1_9 : (c : Char) -> {auto ok : So (isDigit c && c /= '0')} -> S_digit1_9 (hexValue c) [c]
 
 HexQuad : Int -> List Char -> Type
 HexQuad = Map (\(a,b,c,d) => a*0x1000 + b*0x100 + c*0x10 +d*0x1) (S_HEXDIG .. S_HEXDIG .. S_HEXDIG .. S_HEXDIG)
