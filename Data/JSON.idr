@@ -108,6 +108,18 @@ data S_sign : Bool -> Sign -> List Char -> Type where
   S_plus : S_sign True Plus ['+']
   S_minus : S_sign plusAllowed Minus ['-']
 
+signed : Maybe Sign -> Integer -> Integer
+signed (Just Minus) x = -x
+signed _ x = x
+
+fromDigits : Int -> List Int -> Integer
+fromDigits x [] = cast x
+fromDigits x (y :: ys) = 10 * (cast x) + fromDigits y ys
+
+data S_exp : Integer -> List Char -> Type where
+  MakeExp : (S_e .. MaybeS (S_sign True) .. S_DIGIT .. ListS S_DIGIT) (e, s, d, ds) text ->
+            S_exp (signed s $ fromDigits d ds) text
+
 data S_decimal_point : () -> List Char -> Type where
   DecimalPoint : S_decimal_point () ['.']
 
@@ -176,3 +188,5 @@ mutual
                S_value (JsonArray $ toJsonList value) text
     S_object : (S_begin_object .. (MaybeS (S_member .. ListS (S_value_separator .. S_member))) .. S_end_object) value text ->
                S_value (JsonObject $ toJsonPropList value) text
+    S_number : (MaybeS (S_sign False) .. S_int .. MaybeS S_exp) value text ->
+               S_value (JsonNumber $ cast $ pack text) text
