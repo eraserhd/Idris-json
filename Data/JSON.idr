@@ -99,6 +99,10 @@ data S_int : Integer -> List Char -> Type where
   S_zero  : S_int 0 ['0']
   NonZero : (S_digit1_9 .. ListS S_DIGIT) (x, xs) text -> S_int (cast $ pack text) text
 
+data S_e : () -> List Char -> Type where
+  UpperCaseE : S_e () ['E']
+  LowerCaseE : S_e () ['e']
+
 HexQuad : Int -> List Char -> Type
 HexQuad = Map (\(a,b,c,d) => a*0x1000 + b*0x100 + c*0x10 +d*0x1) (S_HEXDIG .. S_HEXDIG .. S_HEXDIG .. S_HEXDIG)
 
