@@ -1,4 +1,4 @@
-module Data.JSON.Token
+module Data.JSON.Semantics
 
 import Data.So
 import Data.Bits
@@ -194,3 +194,6 @@ mutual
                S_value (JsonObject $ toJsonPropList value) text
     S_number : (MaybeS (S_sign False) .. S_int .. MaybeS S_frac .. MaybeS S_exp) value text ->
                S_value (JsonNumber $ cast $ pack text) text
+
+data S_document : JsonValue -> List Char -> Type where
+  MkDocument : (S_whitespace .. S_value .. S_whitespace) (_, v, _) text -> S_document v text
