@@ -103,6 +103,9 @@ data S_e : () -> List Char -> Type where
   UpperCaseE : S_e () ['E']
   LowerCaseE : S_e () ['e']
 
+data S_decimal_point : () -> List Char -> Type where
+  DecimalPoint : S_decimal_point () ['.']
+
 HexQuad : Int -> List Char -> Type
 HexQuad = Map (\(a,b,c,d) => a*0x1000 + b*0x100 + c*0x10 +d*0x1) (S_HEXDIG .. S_HEXDIG .. S_HEXDIG .. S_HEXDIG)
 
