@@ -44,7 +44,7 @@ data CharS : Char -> Char -> List Char -> Type where
 data Map : (func : a -> b) ->
            (a -> List Char -> Type) ->
            b -> List Char -> Type where
-  MakeMap : sem v text -> Map func sem (func v) text
+  MkMap : sem v text -> Map func sem (func v) text
 
 data S_whitespace' : Char -> List Char -> Type where
   Space          : S_whitespace' ' '  [' ']
@@ -120,11 +120,11 @@ data S_decimal_point : () -> List Char -> Type where
   DecimalPoint : S_decimal_point () ['.']
 
 data S_frac : Integer -> List Char -> Type where
-  MakeFrac : (S_decimal_point .. S_DIGIT .. ListS S_DIGIT) (_, d, ds) text ->
+  MkFrac : (S_decimal_point .. S_DIGIT .. ListS S_DIGIT) (_, d, ds) text ->
              S_frac (fromDigits d ds) text
 
 data S_exp : Integer -> List Char -> Type where
-  MakeExp : (S_e .. MaybeS (S_sign True) .. S_DIGIT .. ListS S_DIGIT) (e, s, d, ds) text ->
+  MkExp : (S_e .. MaybeS (S_sign True) .. S_DIGIT .. ListS S_DIGIT) (e, s, d, ds) text ->
             S_exp (signed s $ fromDigits d ds) text
 
 HexQuad : Int -> List Char -> Type
