@@ -2,18 +2,10 @@ module Data.JSON.Semantics
 
 import Data.So
 import Data.Bits
+import Data.JSON.Type
 
 %default total
-
-public export
-data JsonValue : Type where
-  JsonNull   : JsonValue
-  JsonBool   : Bool -> JsonValue
-  JsonString : String -> JsonValue
-  JsonArray  : List JsonValue -> JsonValue
-  JsonObject : List (String, JsonValue) -> JsonValue
-  JsonNumber : Double -> JsonValue
-
+%access public export
 
 infixr 7 ..
 
