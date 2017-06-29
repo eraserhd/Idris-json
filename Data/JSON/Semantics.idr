@@ -89,11 +89,11 @@ hexValue c = if isDigit c
              else ord (toUpper c) - ord 'A' + 10
 
 data S_DIGIT : Int -> List Char -> Type where
-  Digit : (c : Char) -> {auto ok : So (isDigit c)} -> S_DIGIT (hexValue c) [c]
+  MkS_DIGIT : (c : Char) -> {auto ok : So (isDigit c)} -> S_DIGIT (hexValue c) [c]
 data S_HEXDIG : Int -> List Char -> Type where
-  HexDigit : (c : Char) -> {auto ok : So (isHexDigit c)} -> S_HEXDIG (hexValue c) [c]
+  MkS_HEXDIG : (c : Char) -> {auto ok : So (isHexDigit c)} -> S_HEXDIG (hexValue c) [c]
 data S_digit1_9 : Int -> List Char -> Type where
-  Digit1_9 : (c : Char) -> {auto ok : So (isDigit c && c /= '0')} -> S_digit1_9 (hexValue c) [c]
+  MkS_digit1_9 : (c : Char) -> {auto ok : So (isDigit c && c /= '0')} -> S_digit1_9 (hexValue c) [c]
 
 data S_int : Integer -> List Char -> Type where
   S_zero  : S_int 0 ['0']
@@ -120,11 +120,11 @@ data S_decimal_point : () -> List Char -> Type where
   DecimalPoint : S_decimal_point () ['.']
 
 data S_frac : Integer -> List Char -> Type where
-  MkFrac : (S_decimal_point .. S_DIGIT .. ListS S_DIGIT) (_, d, ds) text ->
+  MkS_frac : (S_decimal_point .. S_DIGIT .. ListS S_DIGIT) (_, d, ds) text ->
              S_frac (fromDigits d ds) text
 
 data S_exp : Integer -> List Char -> Type where
-  MkExp : (S_e .. MaybeS (S_sign True) .. S_DIGIT .. ListS S_DIGIT) (e, s, d, ds) text ->
+  MkS_exp : (S_e .. MaybeS (S_sign True) .. S_DIGIT .. ListS S_DIGIT) (e, s, d, ds) text ->
             S_exp (signed s $ fromDigits d ds) text
 
 HexQuad : Int -> List Char -> Type
@@ -181,7 +181,7 @@ toJsonPropList (_, Nothing, _) = []
 
 mutual
   data S_member : (String, JsonValue) -> List Char -> Type where
-    MkMember : (S_string' .. S_name_separator .. S_value) (k, _, v) text -> S_member (k, v) text
+    MkS_member : (S_string' .. S_name_separator .. S_value) (k, _, v) text -> S_member (k, v) text
 
   data S_value : JsonValue -> List Char -> Type where
     S_null   : S_value JsonNull ['n','u','l','l']
@@ -196,4 +196,4 @@ mutual
                S_value (JsonNumber $ cast $ pack text) text
 
 data S_document : JsonValue -> List Char -> Type where
-  MkDocument : (S_whitespace .. S_value .. S_whitespace) (_, v, _) text -> S_document v text
+  MkS_document : (S_whitespace .. S_value .. S_whitespace) (_, v, _) text -> S_document v text
