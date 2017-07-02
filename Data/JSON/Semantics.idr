@@ -7,7 +7,9 @@ import Data.JSON.Type
 %default total
 %access public export
 
--- * Combinators * --
+------------------------------------------------------------------------------
+-- Combinators
+------------------------------------------------------------------------------
 
 infixr 7 ..
 
@@ -46,7 +48,9 @@ data Map : (func : a -> b) ->
            b -> List Char -> Type where
   MkMap : sem v text -> Map func sem (func v) text
 
--- * Whitespace * --
+------------------------------------------------------------------------------
+-- Whitespace
+------------------------------------------------------------------------------
 
 ||| A whitespace character.
 data S_ws' : Char -> List Char -> Type where
@@ -60,7 +64,9 @@ data S_ws' : Char -> List Char -> Type where
 S_ws : List Char -> List Char -> Type
 S_ws = ListS S_ws'
 
--- * Structural Characters * --
+------------------------------------------------------------------------------
+-- Structural Characters
+------------------------------------------------------------------------------
 
 ||| Structural characters, §2
 StructuralChar : Char -> () -> List Char -> Type
@@ -84,7 +90,9 @@ S_name_separator = StructuralChar ':'
 S_value_separator : () -> List Char -> Type
 S_value_separator = StructuralChar ','
 
--- * Numbers * --
+------------------------------------------------------------------------------
+-- Numbers
+------------------------------------------------------------------------------
 
 hexValue : Char -> Int
 hexValue c = if isDigit c
@@ -128,7 +136,9 @@ data S_exp : Integer -> List Char -> Type where
   MkS_exp : (S_e .. MaybeS (S_sign True) .. S_DIGIT .. ListS S_DIGIT) (e, s, d, ds) text ->
             S_exp (signed s $ fromDigits d ds) text
 
--- * Strings * --
+------------------------------------------------------------------------------
+-- Strings
+------------------------------------------------------------------------------
 
 data S_HEXDIG : Int -> List Char -> Type where
   MkS_HEXDIG : (c : Char) -> {auto ok : So (isHexDigit c)} -> S_HEXDIG (hexValue c) [c]
@@ -184,7 +194,9 @@ data S_char : Char -> List Char -> Type where
 S_string' : String -> List Char -> Type
 S_string' = Map (\(_, cs, _) => pack cs) $ CharS '"' .. ListS S_char .. CharS '"'
 
--- * Values * --
+------------------------------------------------------------------------------
+-- Values
+------------------------------------------------------------------------------
 
 toJsonList : ((), Maybe (JsonValue, List ((), JsonValue)), ()) -> List JsonValue
 toJsonList (_, (Just (v, vs)), _) = v :: map snd vs
@@ -226,7 +238,9 @@ mutual
     S_number : (MaybeS (S_sign False) .. S_int .. MaybeS S_frac .. MaybeS S_exp) value text ->
                S_value (JsonNumber $ cast $ pack text) text
 
--- * Document * --
+------------------------------------------------------------------------------
+-- Top-level
+------------------------------------------------------------------------------
 
 ||| Semantics for the top-level JSON document, rfc7159 §2
 data S_JSON_text : JsonValue -> List Char -> Type where
