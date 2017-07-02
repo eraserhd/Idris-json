@@ -7,8 +7,12 @@ import Data.JSON.Type
 %default total
 %access public export
 
+-- * Combinators * --
+
 infixr 7 ..
 
+||| (..) combines two sems to relate the pair of their results to the concatenation of
+||| their representations.
 data (..) : (fstValueType -> List Char -> Type) ->
             (sndValueType -> List Char -> Type) ->
             (fstValueType, sndValueType) ->
@@ -16,6 +20,7 @@ data (..) : (fstValueType -> List Char -> Type) ->
             Type where
   MkConsecutive : sem1 v1 text1 -> sem2 v2 text2 -> (..) sem1 sem2 (v1, v2) (text1 ++ text2)
 
+||| (MaybeS sem) is semantics for an optional sem.
 data MaybeS : (valueType -> List Char -> Type) ->
               Maybe valueType ->
               List Char ->
@@ -23,6 +28,7 @@ data MaybeS : (valueType -> List Char -> Type) ->
   JustS    : sem v text -> MaybeS sem (Just v) text
   NothingS : MaybeS sem Nothing []
 
+||| (ListS sem) is semantics for zero or more sems (the Kleene operator).
 data ListS : (valueType -> List Char -> Type) ->
              List valueType ->
              List Char ->
@@ -30,50 +36,55 @@ data ListS : (valueType -> List Char -> Type) ->
   Nil  : ListS sem [] []
   (::) : sem v r -> ListS sem vs rs -> ListS sem (v :: vs) (r ++ rs)
 
+||| (CharS c) is semantics for a literal character.  Its value is the Char itself.
 data CharS : Char -> Char -> List Char -> Type where
   MkCharS : CharS c c [c]
 
+||| Change the type of a sem with a mapping function.
 data Map : (func : a -> b) ->
            (a -> List Char -> Type) ->
            b -> List Char -> Type where
   MkMap : sem v text -> Map func sem (func v) text
 
-data S_whitespace' : Char -> List Char -> Type where
-  Space          : S_whitespace' ' '  [' ']
-  HorizontalTab  : S_whitespace' '\t' ['\t']
-  VerticalTab    : S_whitespace' '\v' ['\v']
-  LineFeed       : S_whitespace' '\n' ['\n']
-  CarriageReturn : S_whitespace' '\r' ['\r']
+-- * Whitespace * --
 
-S_whitespace : List Char -> List Char -> Type
-S_whitespace = ListS S_whitespace'
+||| A whitespace character.
+data S_ws' : Char -> List Char -> Type where
+  Space          : S_ws' ' '  [' ']
+  HorizontalTab  : S_ws' '\t' ['\t']
+  VerticalTab    : S_ws' '\v' ['\v']
+  LineFeed       : S_ws' '\n' ['\n']
+  CarriageReturn : S_ws' '\r' ['\r']
 
-S_structural_char : Char -> () -> List Char -> Type
-S_structural_char c = Map (const ()) (S_whitespace .. CharS c .. S_whitespace)
+||| Insignificant whitespace, §2
+S_ws : List Char -> List Char -> Type
+S_ws = ListS S_ws'
+
+-- * Structural Characters * --
+
+||| Structural characters, §2
+StructuralChar : Char -> () -> List Char -> Type
+StructuralChar c = Map (const ()) (S_ws .. CharS c .. S_ws)
 
 S_begin_array : () -> List Char -> Type
-S_begin_array = S_structural_char '['
+S_begin_array = StructuralChar '['
 
 S_begin_object : () -> List Char -> Type
-S_begin_object = S_structural_char '{'
+S_begin_object = StructuralChar '{'
 
 S_end_array : () -> List Char -> Type
-S_end_array = S_structural_char ']'
+S_end_array = StructuralChar ']'
 
 S_end_object : () -> List Char -> Type
-S_end_object = S_structural_char '}'
+S_end_object = StructuralChar '}'
 
 S_name_separator : () -> List Char -> Type
-S_name_separator = S_structural_char ':'
+S_name_separator = StructuralChar ':'
 
 S_value_separator : () -> List Char -> Type
-S_value_separator = S_structural_char ','
+S_value_separator = StructuralChar ','
 
-allowedUnescaped : Char -> Bool
-allowedUnescaped c = let cv = ord c in
-                     (cv >= 0x20 && cv <= 0x21) ||
-                     (cv >= 0x23 && cv <= 0x5B) ||
-                     (cv >= 0x5D && cv <= 0x10FFFF)
+-- * Numbers * --
 
 hexValue : Char -> Int
 hexValue c = if isDigit c
@@ -82,8 +93,6 @@ hexValue c = if isDigit c
 
 data S_DIGIT : Int -> List Char -> Type where
   MkS_DIGIT : (c : Char) -> {auto ok : So (isDigit c)} -> S_DIGIT (hexValue c) [c]
-data S_HEXDIG : Int -> List Char -> Type where
-  MkS_HEXDIG : (c : Char) -> {auto ok : So (isHexDigit c)} -> S_HEXDIG (hexValue c) [c]
 data S_digit1_9 : Int -> List Char -> Type where
   MkS_digit1_9 : (c : Char) -> {auto ok : So (isDigit c && c /= '0')} -> S_digit1_9 (hexValue c) [c]
 
@@ -119,6 +128,11 @@ data S_exp : Integer -> List Char -> Type where
   MkS_exp : (S_e .. MaybeS (S_sign True) .. S_DIGIT .. ListS S_DIGIT) (e, s, d, ds) text ->
             S_exp (signed s $ fromDigits d ds) text
 
+-- * Strings * --
+
+data S_HEXDIG : Int -> List Char -> Type where
+  MkS_HEXDIG : (c : Char) -> {auto ok : So (isHexDigit c)} -> S_HEXDIG (hexValue c) [c]
+
 HexQuad : Int -> List Char -> Type
 HexQuad = Map (\(a,b,c,d) => a*0x1000 + b*0x100 + c*0x10 +d*0x1) (S_HEXDIG .. S_HEXDIG .. S_HEXDIG .. S_HEXDIG)
 
@@ -135,6 +149,13 @@ unicodeSurrogatePair c prf = case (highSurrogate, lowSurrogate) of
                                lowSurrogate : Bits 20
                                lowSurrogate = (cv `and` (cast 0x3FF)) `Data.Bits.or` (cast 0xDC00)
 
+allowedUnescaped : Char -> Bool
+allowedUnescaped c = let cv = ord c in
+                     (cv >= 0x20 && cv <= 0x21) ||
+                     (cv >= 0x23 && cv <= 0x5B) ||
+                     (cv >= 0x5D && cv <= 0x10FFFF)
+
+||| Semantics for characters in JSON strings, rfc7159 §7
 data S_char : Char -> List Char -> Type where
   S_unescaped               : (c : Char) -> So (allowedUnescaped c) -> S_char c [c]
 
@@ -159,9 +180,11 @@ data S_char : Char -> List Char -> Type where
   S_escape_tab              : S_char '\t' ['\\','t']
 
 
+||| JSON string semantics, rfc7159 §7
 S_string' : String -> List Char -> Type
 S_string' = Map (\(_, cs, _) => pack cs) $ CharS '"' .. ListS S_char .. CharS '"'
 
+-- * Values * --
 
 toJsonList : ((), Maybe (JsonValue, List ((), JsonValue)), ()) -> List JsonValue
 toJsonList (_, (Just (v, vs)), _) = v :: map snd vs
@@ -172,20 +195,39 @@ toJsonPropList (_, Just (kv, kvs), _) = kv :: map snd kvs
 toJsonPropList (_, Nothing, _) = []
 
 mutual
+  ||| Semantics for JSON object members, rfc7159 §4
   data S_member : (String, JsonValue) -> List Char -> Type where
     MkS_member : (S_string' .. S_name_separator .. S_value) (k, _, v) text -> S_member (k, v) text
 
+  ||| JSON value semantics, rfc7159 §3
   data S_value : JsonValue -> List Char -> Type where
+
+    ||| JSON null semantics, rfc7159 §3
     S_null   : S_value JsonNull ['n','u','l','l']
+
+    ||| JSON true semantics, rfc7159 §3
     S_true   : S_value (JsonBool True) ['t','r','u','e']
+
+    ||| JSON false semantics, rfc7159 §3
     S_false  : S_value (JsonBool False) ['f','a','l','s','e']
+
+    ||| JSON string semantics, rfc7159 §7
     S_string : S_string' s text -> S_value (JsonString s) text
-    S_array  : (S_begin_array .. (MaybeS (S_value .. ListS (S_value_separator .. S_value))) .. S_end_array) value text ->
-               S_value (JsonArray $ toJsonList value) text
+
+    ||| JSON object semantics, rfc7159 §4
     S_object : (S_begin_object .. (MaybeS (S_member .. ListS (S_value_separator .. S_member))) .. S_end_object) value text ->
                S_value (JsonObject $ toJsonPropList value) text
+
+    ||| JSON arrays semantics, rfc7159 §5
+    S_array  : (S_begin_array .. (MaybeS (S_value .. ListS (S_value_separator .. S_value))) .. S_end_array) value text ->
+               S_value (JsonArray $ toJsonList value) text
+
+    ||| JSON number semantics, rfc7159 §6
     S_number : (MaybeS (S_sign False) .. S_int .. MaybeS S_frac .. MaybeS S_exp) value text ->
                S_value (JsonNumber $ cast $ pack text) text
 
-data S_document : JsonValue -> List Char -> Type where
-  MkS_document : (S_whitespace .. S_value .. S_whitespace) (_, v, _) text -> S_document v text
+-- * Document * --
+
+||| Semantics for the top-level JSON document, rfc7159 §2
+data S_JSON_text : JsonValue -> List Char -> Type where
+  MkS_JSON_text : (S_ws .. S_value .. S_ws) (_, v, _) text -> S_JSON_text v text
