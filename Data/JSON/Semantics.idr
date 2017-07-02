@@ -14,7 +14,7 @@ data (..) : (fstValueType -> List Char -> Type) ->
             (fstValueType, sndValueType) ->
             List Char ->
             Type where
-  Consecutive : sem1 v1 text1 -> sem2 v2 text2 -> (..) sem1 sem2 (v1, v2) (text1 ++ text2)
+  MkConsecutive : sem1 v1 text1 -> sem2 v2 text2 -> (..) sem1 sem2 (v1, v2) (text1 ++ text2)
 
 data MaybeS : (valueType -> List Char -> Type) ->
               Maybe valueType ->
@@ -31,7 +31,7 @@ data ListS : (valueType -> List Char -> Type) ->
   (::) : sem v r -> ListS sem vs rs -> ListS sem (v :: vs) (r ++ rs)
 
 data CharS : Char -> Char -> List Char -> Type where
-  Found : CharS c c [c]
+  MkCharS : CharS c c [c]
 
 data Map : (func : a -> b) ->
            (a -> List Char -> Type) ->
@@ -109,7 +109,7 @@ fromDigits x [] = cast x
 fromDigits x (y :: ys) = 10 * (cast x) + fromDigits y ys
 
 data S_decimal_point : () -> List Char -> Type where
-  DecimalPoint : S_decimal_point () ['.']
+  MkS_decimal_point : S_decimal_point () ['.']
 
 data S_frac : Integer -> List Char -> Type where
   MkS_frac : (S_decimal_point .. S_DIGIT .. ListS S_DIGIT) (_, d, ds) text ->
