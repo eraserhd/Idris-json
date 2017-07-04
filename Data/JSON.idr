@@ -3,6 +3,8 @@ module Data.JSON
 import public Data.JSON.Type
 import Data.JSON.Semantics
 
+%default total
+
 ------------------------------------------------------------------------------
 -- show
 ------------------------------------------------------------------------------
