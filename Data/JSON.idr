@@ -9,18 +9,18 @@ import Data.JSON.Semantics
 -- show
 ------------------------------------------------------------------------------
 
+beginArray : S_begin_array () ['[']
+beginArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
+
+endArray : S_end_array () [']']
+endArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
+
 showValue : (v : JsonValue) -> (text : List Char ** S_value v text)
 showValue JsonNull         = (['n','u','l','l']     ** S_null)
 showValue (JsonBool False) = (['f','a','l','s','e'] ** S_false)
 showValue (JsonBool True)  = (['t','r','u','e']     ** S_true)
 showValue (JsonArray [])   = (['[',']']             ** array)
                              where
-                               beginArray : S_begin_array () ['[']
-                               beginArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
-
-                               endArray : S_end_array () [']']
-                               endArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
-
                                array : S_value (JsonArray []) ['[',']']
                                array = S_array (MkConsecutive beginArray (MkConsecutive NothingS endArray))
 showValue (JsonArray (x :: xs)) = ?show'_rhs_4
