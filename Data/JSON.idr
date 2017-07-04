@@ -18,18 +18,26 @@ showEndArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 showValueSeparator : S_value_separator () [',']
 showValueSeparator = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 
-showValue : (v : JsonValue) -> (text : List Char ** S_value v text)
-showValue JsonNull         = (['n','u','l','l']     ** S_null)
-showValue (JsonBool False) = (['f','a','l','s','e'] ** S_false)
-showValue (JsonBool True)  = (['t','r','u','e']     ** S_true)
-showValue (JsonArray [])   = (['[',']']             ** array)
-                             where
-                               array : S_value (JsonArray []) ['[',']']
-                               array = S_array (MkConsecutive showBeginArray (MkConsecutive NothingS showEndArray))
-showValue (JsonArray (x :: xs)) = ?show'_rhs_4
-showValue (JsonString x)        = ?showValue_rhs_3
-showValue (JsonObject xs)       = ?showValue_rhs_5
-showValue (JsonNumber x)        = ?showValue_rhs_6
+mutual
+  showValueList : (vs : List JsonValue) ->
+                  (text : List Char ** ListS (S_value_separator .. S_value) (map (\v => ((), v)) vs) text)
+  showValueList []        = ([] ** Nil)
+  showValueList (v :: vs) = let (vText ** vValue) = showValue v
+                                (vsText ** vsValues) = showValueList vs in
+                            ((',' :: vText ++ vsText) ** (MkConsecutive showValueSeparator vValue) :: vsValues)
+
+  showValue : (v : JsonValue) -> (text : List Char ** S_value v text)
+  showValue JsonNull         = (['n','u','l','l']     ** S_null)
+  showValue (JsonBool False) = (['f','a','l','s','e'] ** S_false)
+  showValue (JsonBool True)  = (['t','r','u','e']     ** S_true)
+  showValue (JsonArray [])   = (['[',']']             ** array)
+                               where
+                                 array : S_value (JsonArray []) ['[',']']
+                                 array = S_array (MkConsecutive showBeginArray (MkConsecutive NothingS showEndArray))
+  showValue (JsonArray (x :: xs)) = ?show'_rhs_4
+  showValue (JsonString x)        = ?showValue_rhs_3
+  showValue (JsonObject xs)       = ?showValue_rhs_5
+  showValue (JsonNumber x)        = ?showValue_rhs_6
 
 showJSONText : (v : JsonValue) -> (text : List Char ** S_JSON_text v text)
 showJSONText v = let (text ** s_value) = showValue v in

@@ -8,3 +8,5 @@ data JsonValue : Type where
   JsonArray  : List JsonValue -> JsonValue
   JsonObject : List (String, JsonValue) -> JsonValue
   JsonNumber : Double -> JsonValue
+
+%name JsonValue v
