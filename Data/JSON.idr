@@ -12,8 +12,8 @@ import Data.JSON.Semantics
 showBeginArray : S_begin_array () ['[']
 showBeginArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 
-endArray : S_end_array () [']']
-endArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
+showEndArray : S_end_array () [']']
+showEndArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 
 showValue : (v : JsonValue) -> (text : List Char ** S_value v text)
 showValue JsonNull         = (['n','u','l','l']     ** S_null)
@@ -22,7 +22,7 @@ showValue (JsonBool True)  = (['t','r','u','e']     ** S_true)
 showValue (JsonArray [])   = (['[',']']             ** array)
                              where
                                array : S_value (JsonArray []) ['[',']']
-                               array = S_array (MkConsecutive showBeginArray (MkConsecutive NothingS endArray))
+                               array = S_array (MkConsecutive showBeginArray (MkConsecutive NothingS showEndArray))
 showValue (JsonArray (x :: xs)) = ?show'_rhs_4
 showValue (JsonString x)        = ?showValue_rhs_3
 showValue (JsonObject xs)       = ?showValue_rhs_5
