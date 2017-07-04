@@ -18,23 +18,46 @@ showEndArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 showValueSeparator : S_value_separator () [',']
 showValueSeparator = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 
+toSnd : a -> ((), a)
+toSnd v = ((), v)
+
+mapIdNeutral : (vs : List a) -> map (\x => x) vs = vs
+mapIdNeutral [] = Refl
+mapIdNeutral (x :: xs) = rewrite mapIdNeutral xs in Refl
+
+toJsonListLemma : (v : JsonValue) ->
+                  (vs : List JsonValue) ->
+                  v :: vs = toJsonList ((), Just (v, map Data.JSON.toSnd vs), ())
+toJsonListLemma v vs = rewrite ((map Prelude.Basics.snd (map toSnd vs)) = (map (snd . toSnd) vs)) <== mapFusion in
+                       rewrite (map (\x => x) vs = vs) <== mapIdNeutral in
+                       Refl
+
 mutual
   showValueList : (vs : List JsonValue) ->
-                  (text : List Char ** ListS (S_value_separator .. S_value) (map (\v => ((), v)) vs) text)
+                  (text : List Char ** ListS (S_value_separator .. S_value) (map Data.JSON.toSnd vs) text)
   showValueList []        = ([] ** Nil)
   showValueList (v :: vs) = let (vText ** vValue) = showValue v
                                 (vsText ** vsValues) = showValueList vs in
                             ((',' :: vText ++ vsText) ** (MkConsecutive showValueSeparator vValue) :: vsValues)
 
   showValue : (v : JsonValue) -> (text : List Char ** S_value v text)
-  showValue JsonNull         = (['n','u','l','l']     ** S_null)
-  showValue (JsonBool False) = (['f','a','l','s','e'] ** S_false)
-  showValue (JsonBool True)  = (['t','r','u','e']     ** S_true)
-  showValue (JsonArray [])   = (['[',']']             ** array)
-                               where
-                                 array : S_value (JsonArray []) ['[',']']
-                                 array = S_array (MkConsecutive showBeginArray (MkConsecutive NothingS showEndArray))
-  showValue (JsonArray (x :: xs)) = ?show'_rhs_4
+  showValue JsonNull              = (['n','u','l','l']     ** S_null)
+  showValue (JsonBool False)      = (['f','a','l','s','e'] ** S_false)
+  showValue (JsonBool True)       = (['t','r','u','e']     ** S_true)
+  showValue (JsonArray [])        = (['[',']']             ** array)
+                                    where
+                                      array : S_value (JsonArray []) ['[',']']
+                                      array = S_array (MkConsecutive showBeginArray (MkConsecutive NothingS showEndArray))
+  showValue (JsonArray (v :: vs)) = let (vText ** vValue) = showValue v
+                                        (vsText ** vsValues) = showValueList vs
+                                        text = '[' :: (vText ++ vsText) ++ [']'] in
+                                    (text **
+                                      rewrite (toJsonListLemma v vs) in
+                                      S_array (MkConsecutive
+                                                showBeginArray
+                                                (MkConsecutive
+                                                  (JustS (MkConsecutive vValue vsValues))
+                                                  showEndArray)))
   showValue (JsonString x)        = ?showValue_rhs_3
   showValue (JsonObject xs)       = ?showValue_rhs_5
   showValue (JsonNumber x)        = ?showValue_rhs_6
