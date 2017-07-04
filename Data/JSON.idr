@@ -9,8 +9,8 @@ import Data.JSON.Semantics
 -- show
 ------------------------------------------------------------------------------
 
-beginArray : S_begin_array () ['[']
-beginArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
+showBeginArray : S_begin_array () ['[']
+showBeginArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 
 endArray : S_end_array () [']']
 endArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
@@ -22,7 +22,7 @@ showValue (JsonBool True)  = (['t','r','u','e']     ** S_true)
 showValue (JsonArray [])   = (['[',']']             ** array)
                              where
                                array : S_value (JsonArray []) ['[',']']
-                               array = S_array (MkConsecutive beginArray (MkConsecutive NothingS endArray))
+                               array = S_array (MkConsecutive showBeginArray (MkConsecutive NothingS endArray))
 showValue (JsonArray (x :: xs)) = ?show'_rhs_4
 showValue (JsonString x)        = ?showValue_rhs_3
 showValue (JsonObject xs)       = ?showValue_rhs_5
