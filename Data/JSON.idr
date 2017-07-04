@@ -26,10 +26,10 @@ show' (JsonArray [])   = (['[',']']             ** unpadded array)
                            array : S_value (JsonArray []) ['[',']']
                            array = S_array (MkConsecutive beginArray (MkConsecutive NothingS endArray))
 
-show' (JsonArray (x :: xs))   = ?show'_rhs_4
-show' (JsonString x)   = ?show'_rhs_3
-show' (JsonObject xs)  = ?show'_rhs_5
-show' (JsonNumber x)   = ?show'_rhs_6
+show' (JsonArray (x :: xs)) = ?show'_rhs_4
+show' (JsonString x)        = ?show'_rhs_3
+show' (JsonObject xs)       = ?show'_rhs_5
+show' (JsonNumber x)        = ?show'_rhs_6
 
 implementation Show JsonValue where
   show v = pack $ fst $ show' v
