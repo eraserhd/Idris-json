@@ -15,6 +15,9 @@ showBeginArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 showEndArray : S_end_array () [']']
 showEndArray = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
 
+showValueSeparator : S_value_separator () [',']
+showValueSeparator = MkMap $ MkConsecutive Nil (MkConsecutive MkCharS Nil)
+
 showValue : (v : JsonValue) -> (text : List Char ** S_value v text)
 showValue JsonNull         = (['n','u','l','l']     ** S_null)
 showValue (JsonBool False) = (['f','a','l','s','e'] ** S_false)
