@@ -40,6 +40,10 @@ toJsonListLemma v vs = rewrite ((map Prelude.Basics.snd (map toSnd vs)) = (map (
                        rewrite (map (\x => x) vs = vs) <== mapIdNeutral in
                        Refl
 
+showHEXDIG : (value : Int) -> (text : List Char ** S_HEXDIG value text)
+
+showHexQuad : (value : Int) -> (text : List Char ** HexQuad value text)
+
 showStringChar : (c : Char) -> (text : List Char ** S_char c text)
 showStringChar c with (choose $ allowedUnescaped c)
   showStringChar c    | (Left prf) = ([c] ** S_unescaped c prf)
@@ -51,7 +55,9 @@ showStringChar c with (choose $ allowedUnescaped c)
   showStringChar '\r' | _ = (['\\','r'] ** S_escape_carriage_return)
   showStringChar '\t' | _ = (['\\','t'] ** S_escape_tab)
   showStringChar c    | _ with (choose $ c <= chr 0xFFFF)
-    showStringChar c | _ | (Left unicodeEscapableProof) = ?showStringChar_rhs_1
+    showStringChar c | _ | (Left unicodeEscapableProof) =
+      let (hqText ** hqProof) = showHexQuad (ord c) in
+      ('\\' :: 'u' :: hqText ** S_unicode_escape c unicodeEscapableProof hqProof)
     showStringChar c | _ | (Right surrogatePairProof)   = ?showStringChar_rhs_2
 
 mutual
