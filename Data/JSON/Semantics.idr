@@ -146,7 +146,7 @@ data S_HEXDIG : Int -> List Char -> Type where
 HexQuad : Int -> List Char -> Type
 HexQuad = Map (\(a,b,c,d) => a*0x1000 + b*0x100 + c*0x10 +d*0x1) (S_HEXDIG .. S_HEXDIG .. S_HEXDIG .. S_HEXDIG)
 
-unicodeSurrogatePair : (c : Char) -> So (ord c > 0xFFFF) -> (Int, Int)
+unicodeSurrogatePair : (c : Char) -> So (not (c <= chr 0xFFFF)) -> (Int, Int)
 unicodeSurrogatePair c prf = case (highSurrogate, lowSurrogate) of
                                (MkBits l, MkBits h) => (prim__sextB32_Int l, prim__sextB32_Int h)
                              where
@@ -170,11 +170,11 @@ data S_char : Char -> List Char -> Type where
   S_unescaped               : (c : Char) -> So (allowedUnescaped c) -> S_char c [c]
 
   S_unicode_escape          : (c : Char) ->
-                              So (ord c <= 0xFFFF) ->
+                              So (c <= chr 0xFFFF) ->
                               HexQuad (ord c) text ->
                               S_char c ('\\' :: 'u' :: text)
   S_unicode_surrogate_pair  : (c : Char) ->
-                              (rangeProof : So (ord c > 0xFFFF)) ->
+                              (rangeProof : So (not (c <= chr 0xFFFF))) ->
                               HexQuad (fst $ unicodeSurrogatePair c rangeProof) text1 ->
                               HexQuad (snd $ unicodeSurrogatePair c rangeProof) text2 ->
                               S_char c ('\\' :: 'u' :: text1 ++ ('\\' :: 'u' :: text2))

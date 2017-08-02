@@ -3,6 +3,8 @@ module Data.JSON
 import public Data.JSON.Type
 import Data.JSON.Semantics
 
+import Data.So
+
 %default total
 
 ------------------------------------------------------------------------------
@@ -37,6 +39,20 @@ toJsonListLemma : (v : JsonValue) ->
 toJsonListLemma v vs = rewrite ((map Prelude.Basics.snd (map toSnd vs)) = (map (snd . toSnd) vs)) <== mapFusion in
                        rewrite (map (\x => x) vs = vs) <== mapIdNeutral in
                        Refl
+
+showStringChar : (c : Char) -> (text : List Char ** S_char c text)
+showStringChar c with (choose $ allowedUnescaped c)
+  showStringChar c    | (Left prf) = ([c] ** S_unescaped c prf)
+  showStringChar '"'  | _ = (['\\','"'] ** S_escape_quotation_mark)
+  showStringChar '\\' | _ = (['\\','\\'] ** S_escape_reverse_solidus)
+  showStringChar '\b' | _ = (['\\','b'] ** S_escape_backspace)
+  showStringChar '\f' | _ = (['\\','f'] ** S_escape_form_feed)
+  showStringChar '\n' | _ = (['\\','n'] ** S_escape_line_feed)
+  showStringChar '\r' | _ = (['\\','r'] ** S_escape_carriage_return)
+  showStringChar '\t' | _ = (['\\','t'] ** S_escape_tab)
+  showStringChar c    | _ with (choose $ c <= chr 0xFFFF)
+    showStringChar c | _ | (Left unicodeEscapableProof) = ?showStringChar_rhs_1
+    showStringChar c | _ | (Right surrogatePairProof)   = ?showStringChar_rhs_2
 
 mutual
   showValueList : (vs : List JsonValue) ->
