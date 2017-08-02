@@ -58,7 +58,11 @@ showStringChar c with (choose $ allowedUnescaped c)
     showStringChar c | _ | (Left unicodeEscapableProof) =
       let (hqText ** hqProof) = showHexQuad (ord c) in
       ('\\' :: 'u' :: hqText ** S_unicode_escape c unicodeEscapableProof hqProof)
-    showStringChar c | _ | (Right surrogatePairProof)   = ?showStringChar_rhs_2
+    showStringChar c | _ | (Right surrogatePairProof) =
+      let (hq1Text ** hq1Proof) = showHexQuad (fst (unicodeSurrogatePair c))
+          (hq2Text ** hq2Proof) = showHexQuad (snd (unicodeSurrogatePair c)) in
+      ('\\' :: 'u' :: hq1Text ++ '\\' :: 'u' :: hq2Text **
+       S_unicode_surrogate_pair c surrogatePairProof hq1Proof hq2Proof)
 
 mutual
   showValueList : (vs : List JsonValue) ->
