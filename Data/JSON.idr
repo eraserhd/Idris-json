@@ -40,12 +40,6 @@ toJsonListLemma v vs = rewrite ((map Prelude.Basics.snd (map toSnd vs)) = (map (
                        rewrite (map (\x => x) vs = vs) <== mapIdNeutral in
                        Refl
 
-lemma : (x, y : Nat) -> (LTE x y -> Void) -> LTE (S y) x
-lemma Z      _      notLTExy = absurd (notLTExy LTEZero)
-lemma (S _)  Z      notLTExy = LTESucc LTEZero
-lemma (S x') (S y') notLTExy = LTESucc $ lemma x' y' ?notLTExy2
-
-
 showHEXDIG : (x : Nat) -> {auto xOk : x `LTE` 15} -> (text : List Char ** S_HEXDIG x text)
 showHEXDIG {xOk} x with (x `isLTE` 9)
   showHEXDIG {xOk} x | (Yes prf)   = ([chr (ord '0' + (toIntNat x))] ** MkS_HEXDIG_0 x prf)
