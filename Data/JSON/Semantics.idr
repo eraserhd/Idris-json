@@ -140,11 +140,13 @@ data S_exp : Integer -> List Char -> Type where
 -- Strings
 ------------------------------------------------------------------------------
 
-data S_HEXDIG : Int -> List Char -> Type where
-  MkS_HEXDIG : (c : Char) -> {auto ok : So (isHexDigit c)} -> S_HEXDIG (hexValue c) [c]
+data S_HEXDIG : Nat -> List Char -> Type where
+  MkS_HEXDIG_0 : (x : Nat) -> x `LTE` 9 -> S_HEXDIG x [chr (ord '0' + (toIntNat x))]
+  MkS_HEXDIG_A : (x : Nat) -> x `LTE` 15 -> (x `LTE` 9 -> Void) -> S_HEXDIG x [chr (ord 'A' - 10 + (toIntNat x))]
+  MkS_HEXDIG_a : (x : Nat) -> x `LTE` 15 -> (x `LTE` 9 -> Void) -> S_HEXDIG x [chr (ord 'a' - 10 + (toIntNat x))]
 
 HexQuad : Int -> List Char -> Type
-HexQuad = Map (\(a,b,c,d) => a*0x1000 + b*0x100 + c*0x10 +d*0x1) (S_HEXDIG .. S_HEXDIG .. S_HEXDIG .. S_HEXDIG)
+HexQuad = Map (\(a,b,c,d) => (toIntNat a)*0x1000 + (toIntNat b)*0x100 + (toIntNat c)*0x10 +(toIntNat d)*0x1) (S_HEXDIG .. S_HEXDIG .. S_HEXDIG .. S_HEXDIG)
 
 unicodeSurrogatePair : (c : Char) -> (Int, Int)
 unicodeSurrogatePair c = case (highSurrogate, lowSurrogate) of
